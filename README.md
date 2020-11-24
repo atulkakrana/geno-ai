@@ -24,3 +24,8 @@ vectors.
 ## III. Generate Training Set
 Labels could be fecthed for genes from [DisGeNet site](https://www.disgenet.org/). Model as multi-label
 classification experiment by providing multiple diseases labels to each gene (using some cutoff). 
+
+### Features
+1. Gene expression
+2. Kmer-embeddings from promotor regions
+3. Keywords or sentiments associated with genes
