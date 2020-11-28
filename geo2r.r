@@ -7,8 +7,15 @@ require(Mus.musculus)
 require(edgeR)
 require(RColorBrewer)
 
-wd = getwd()
-wd
+## Load Python Interface
+library(reticulate)
+use_virtualenv("ds")
+
+os = import("os")
+print(os$listdir)
+
+# wd = getwd()
+# wd
 
 ## FETCH DATA
 ## https://www.bioconductor.org/packages/release/bioc/vignettes/GEOquery/inst/doc/GEOquery.html
@@ -110,6 +117,8 @@ legend("topright", samplenames, text.col=col, bty="n")
 ## Normalizing Gene Distributions
 x <- calcNormFactors(x, method = "TMM")
 x$samples
+x[1:10,]
 
 lcpm <- cpm(x, log=TRUE)
-x$samples
+colnames(lcpm)
+lcpm[1:10,]
