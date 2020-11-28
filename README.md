@@ -35,7 +35,19 @@ GED are processed for normalized expressions counts. These are likely normalized
 sum of normalized expression is scaled between 0 and 1. These represent as gene expression
 vectors.
 
+### 1. Compute Expression Counts
 
+<br/>
+
+### 2. Impute Missing Expression Counts
+
+**Basic Imputation**: Replace all missing FPKM counts to 0.    
+**KNN**: https://www.bioconductor.org/packages/devel/bioc/manuals/impute/man/impute.pdf    
+**GAN**: https://www.biorxiv.org/content/10.1101/2020.06.09.141689v1    
+**AE**:  https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7144625/    
+
+
+<br/>
 
 <br/>      
 <br/>
