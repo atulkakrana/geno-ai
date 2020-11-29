@@ -31,12 +31,14 @@ mt_main_fpkm = as.matrix(sapply(df_main_fpkm[,3:96], as.numeric))
 nrow(mt_main_fpkm); ncol(mt_main_fpkm)
 mt_main_fpkm[1:5,1:5, drop = FALSE]
 
+
 ## Impute; output is a list
 mt_impute_lst  = impute.knn(mt_main_fpkm ,k = 10, rowmax = 0.5, colmax = 0.8, maxp = 1500, rng.seed=362436069)
 names(mt_impute_lst) ## Check list elements
 mt_impute_fpkm = mt_impute_lst$data
 nrow(mt_impute_fpkm ); ncol(mt_impute_fpkm )
 mt_impute_fpkm[1:5,1:8, drop = FALSE]
+
 
 ## Make DF and write
 df_impute_fpkm = as.data.frame(mt_impute_fpkm)
