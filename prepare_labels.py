@@ -207,9 +207,24 @@ fin_labs_dct, bin_labs_dct = process_labs(gene_labs_dct)
 fin_labs_dct, bin_labs_dct = process_labs(gene_labs_dct)
 
 
+# %% DEV
 
-# %% RUNNING CODE
 
+
+
+# %% MAIN
+def main():
+    labs_df, cur_labs_df, dis_attr_df = read_lab_data()
+    filt_attr_df  = dis_attr_mask_gen(dis_attr_df)
+    gene_labs_dct = gen_dis_labs_dct(cur_labs_df)
+    fin_labs_dct, bin_labs_dct = process_labs(gene_labs_dct)
+
+    return None
+
+# %% 
+if __name__ == "__main__":
+    main()
+    pass
 
 
 # %% CHANGELOG
