@@ -27,10 +27,12 @@ def df_py_to_r(df_py):
 # df_main  = pd.read_csv('s3://lachke-lab-data/work/0.geno-ai/data/rna-seq/E-MTAB-6798/E-MTAB-6798-query-results.fpkms.tsv', sep="\t")
 df_main_fpkm = pd.read_csv(fs.open('s3://lachke-lab-data/work/0.geno-ai/data/rna-seq/E-MTAB-6798/E-MTAB-6798-query-results.fpkms.tsv'),
                        sep = "\t" )
+df_main_fpkm.to_pickle("exprs_data_fpkm.p", compression='infer', protocol=4)
 df_main_fpkm.head()
 
 # %% READ FROM S3 - CPM
-df_main_cpm = pd.read_csv(fs.open('s3://lachke-lab-data/work/0.geno-ai/data/rna-seq/E-MTAB-6798/E-MTAB-6798-query-results.tpms.tsv'), sep = "\t" )
+df_main_cpm = pd.read_csv(fs.open('s3://lachke-lab-data/work/0.geno-ai/data/rna-seq/E-MTAB-6798/E-MTAB-6798-query-results.tpms.tsv'), sep = "\t") 
+df_main_cpm.to_pickle("exprs_data_cpm.p", compression='infer', protocol=4)
 df_main_cpm.head()
 
 # %% READ LOCAL
