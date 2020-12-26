@@ -34,9 +34,9 @@ df_main_cpm = pd.read_csv(fs.open('s3://lachke-lab-data/work/0.geno-ai/data/rna-
 df_main_cpm.head()
 
 # %% READ LOCAL
-df_main_fpkm  = pd.read_csv('/home/atul/0.work/0.dl/data/rna-seq/e-mtab-6798/E-MTAB-6798-query-results.fpkms.tsv', sep="\t")
-df_main_cpm   = pd.read_csv('/home/atul/0.work/0.dl/data/rna-seq/e-mtab-6798/E-MTAB-6798-query-results.tpms.tsv', sep="\t")
-df_main_fpkm.head()
+# df_main_fpkm  = pd.read_csv('/home/atul/0.work/0.dl/data/rna-seq/e-mtab-6798/E-MTAB-6798-query-results.fpkms.tsv', sep="\t")
+# df_main_cpm   = pd.read_csv('/home/atul/0.work/0.dl/data/rna-seq/e-mtab-6798/E-MTAB-6798-query-results.tpms.tsv', sep="\t")
+# df_main_fpkm.head()
 
 
 #### PREPROCESS

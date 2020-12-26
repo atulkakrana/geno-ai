@@ -146,7 +146,7 @@ def gen_dis_labs_dct(cur_labs_df):
     print(f"Elements in labels dct:{len(labs_dct)}")
     return labs_dct
 
-def process_labs(indct):
+def prepare_labs(indct):
     '''
     remove certain diseases classes based on their
     low occurance in disgeneset, and based n the 
@@ -174,7 +174,7 @@ def process_labs(indct):
     ## labels and others get neg
     ## genes with eye disease along
     ## with others also get pos label
-    for k,v in fin_labs_dct.items():
+    for k,v in labs_dct.items():
         if binary_tar.intersection(v):
             labs_bin_dct[k] = "pos"
         else:
@@ -195,29 +195,24 @@ def process_labs(indct):
     print(f"Elements in labels dct:{len(labs_dct)}")
     return labs_dct, labs_bin_dct
 
-# %% MAIN
+# %% MAIN - INTERACTIVE
 ## %%capture
-labs_df, cur_labs_df, dis_attr_df = read_lab_data()
-filt_attr_df  = dis_attr_mask_gen(dis_attr_df)
-gene_labs_dct = gen_dis_labs_dct(cur_labs_df)
-fin_labs_dct, bin_labs_dct = process_labs(gene_labs_dct)
-
+# labs_df, cur_labs_df, dis_attr_df = read_lab_data()
+# filt_attr_df  = dis_attr_mask_gen(dis_attr_df)
+# gene_labs_dct = gen_dis_labs_dct(cur_labs_df)
+# fin_labs_dct, bin_labs_dct = prepare_labs(gene_labs_dct)
 
 # %% TEST
-fin_labs_dct, bin_labs_dct = process_labs(gene_labs_dct)
 
 
 # %% DEV
 
 
-
-
 # %% MAIN
 def main():
     labs_df, cur_labs_df, dis_attr_df = read_lab_data()
-    filt_attr_df  = dis_attr_mask_gen(dis_attr_df)
-    gene_labs_dct = gen_dis_labs_dct(cur_labs_df)
-    fin_labs_dct, bin_labs_dct = process_labs(gene_labs_dct)
+    gene_labs_dct                     = gen_dis_labs_dct(cur_labs_df)
+    fin_labs_dct, bin_labs_dct        = prepare_labs(gene_labs_dct)
 
     return None
 
@@ -228,8 +223,10 @@ if __name__ == "__main__":
 
 
 # %% CHANGELOG
-
-
+## V01 [12-26-2020]
+## added functions to read data from S3
+## added functions to extract MSH diseases codes as labels
+## added function to clean labels, and generate gene-diseases labels dicts
 
 
 # %% TO DO
