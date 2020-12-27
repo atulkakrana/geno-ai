@@ -13,12 +13,15 @@ require(impute)
 require(aws.s3)
 
 ## READ DATA
-s3read_using(FUN = read.csv2, bucket = "lachke-lab-data/work/0.geno-ai/data/rna-seq/E-MTAB-6798/", 
-                              object = "E-MTAB-6798-query-results.fpkms.tsv")
 
+# FROM AWS
+df_main_fpkm = s3read_using(FUN = read.csv2, bucket = "lachke-lab-data/work/0.geno-ai/data/rna-seq/E-MTAB-6798", 
+                              object = "E-MTAB-6798-query-results.fpkms.tsv",
+                              sep = "\t")
 
-df_main_fpkm = read.delim2("/home/atul/0.work/0.dl/data/rna-seq/e-mtab-6798/E-MTAB-6798-query-results.fpkms.tsv", 
-                              header = TRUE, sep = "\t")
+# FROM LOCAL
+# df_main_fpkm = read.delim2("/home/atul/0.work/0.geno_ai/data/rna-seq/e-mtab-6798/E-MTAB-6798-query-results.fpkms.tsv", 
+#                               header = TRUE, sep = "\t")
 nrow(df_main_fpkm);ncol(df_main_fpkm)
 # df_main_fpkm[df_main_fpkm == ""] <- 0
 df_main_fpkm[1:10, 1: 8]
@@ -52,6 +55,11 @@ colnames(df_impute_final)[1] = 'Gene.ID'
 colnames(df_impute_final)[2] = 'Gene.Name'
 
 ## Write Dataframe
-write.table(df_impute_final, "/home/atul/0.work/0.dl/data/rna-seq/e-mtab-6798/E-MTAB-6798-query-results.fpkms.impute.tsv", 
-                             sep = "\t", row.names = FALSE)
+# write.table(df_impute_final, "/home/atul/0.work/0.geno_ai/data/rna-seq/e-mtab-6798/E-MTAB-6798-query-results.fpkms.impute.tsv", 
+#                              sep = "\t", row.names = FALSE)
+s3write_using(df_impute_final, FUN = write.table, 
+              bucket = "lachke-lab-data/work/0.geno-ai/data/rna-seq/E-MTAB-6798",
+              object = "E-MTAB-6798-query-results.fpkms.impute.tsv",
+              sep = "\t")
+              
 
