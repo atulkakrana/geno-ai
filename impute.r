@@ -16,7 +16,7 @@ require(aws.s3)
 
 # FROM AWS
 df_main_fpkm = s3read_using(FUN = read.csv2, bucket = "lachke-lab-data/work/0.geno-ai/data/rna-seq/E-MTAB-6798", 
-                              object = "E-MTAB-6798-query-results.fpkms.tsv",
+                              object = "E-MTAB-6798-query-results.tpms.tsv",
                               sep = "\t")
 
 # FROM LOCAL
@@ -36,6 +36,7 @@ mt_main_fpkm[1:5,1:5, drop = FALSE]
 
 
 ## Impute; output is a list
+## https://www.bioconductor.org/packages/release/bioc/manuals/impute/man/impute.pdf
 mt_impute_lst  = impute.knn(mt_main_fpkm ,k = 10, rowmax = 0.5, colmax = 0.8, maxp = 1500, rng.seed=362436069)
 names(mt_impute_lst) ## Check list elements
 mt_impute_fpkm = mt_impute_lst$data
@@ -59,7 +60,8 @@ colnames(df_impute_final)[2] = 'Gene.Name'
 #                              sep = "\t", row.names = FALSE)
 s3write_using(df_impute_final, FUN = write.table, 
               bucket = "lachke-lab-data/work/0.geno-ai/data/rna-seq/E-MTAB-6798",
-              object = "E-MTAB-6798-query-results.fpkms.impute.tsv",
+              object = "E-MTAB-6798-query-results.tpms.impute.tsv",
               sep = "\t")
               
+
 

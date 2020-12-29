@@ -8,7 +8,7 @@ organs, development stages and perturbation experiments.
 It would be useful to get 1K data set i.e. 1024 different data (i.e. columns) for main
 human organs/tissues (stages) such as eye, kidney, craniofacial, etc.  
 
-Iy may also be useful to use datsets from different models to account for inter-species differences
+It may also be useful to use datsets from different models to account for inter-species differences
 
 
 ### Datasets/Papers
