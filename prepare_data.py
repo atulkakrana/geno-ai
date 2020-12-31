@@ -9,9 +9,11 @@ fs = s3fs.S3FileSystem(anon=False, profile_name="dips")
 # %% IMPORTS
 import rpy2.robjects as ro
 import numpy as np
+import seaborn as sns
 from rpy2.robjects import pandas2ri
 from rpy2.robjects.packages import importr
 from rpy2.robjects.conversion import localconverter
+import matplotlib.pyplot as plt
 
 # %% HELPERS
 def df_py_to_r(df_py):
@@ -95,7 +97,7 @@ def transform_exprs(exprs_in, method = 'log'):
 
     return exprs_tf
 
-def process_exprs_data(self, non_exprs_idxs, method = "log"):
+def process_exprs_data(self, non_exprs_idxs, id_col = 0, method = "log"):
     """
     the input is a dataframe with first two columns with
     gene identifiers, gene names, etc.
@@ -104,44 +106,73 @@ def process_exprs_data(self, non_exprs_idxs, method = "log"):
     https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6658352/
     """
 
+    ## imports
+    import pickle as pkl
+    import pandas as pd 
+
+    ## output
+    outtsv = "data_imp_trfd.tsv"
+    outpkl = "%s_dct.p" % outtsv.rpartition(".")[0]
+
     ## sanity check for missing data
     emp_bool = check_empty_cells(self)
 
     ## extract exprs data
     exprs      = self.drop(self.columns[non_exprs_idxs], axis=1)
     exprs_trfd = transform_exprs(exprs, method = method)
+    # exprs_array= exprs_trfd.to_numpy()
+
+    ## plot exprs data
+    fig = exprs_trfd.plot.box(figsize=(20,8), rot = 90).get_figure()
+    fig.savefig('log_norm.pdf')
 
     ## regenrate dataframe;
     ## combine expression and other columns
     non_exprs_data = self.iloc[:,non_exprs_idxs]
-    data_trfd = pd.concat([non_exprs_data,exprs_trfd], axis = 1)
+    data_trfd      = pd.concat([non_exprs_data,exprs_trfd], axis = 1)
+
+    ## generate dictionary of expression
+    ids      = list(data_trfd.iloc[:, id_col])
+    data_arr = exprs_trfd.values
+    ## sanity check
+    if len(ids) == data_arr.shape[0]:
+        data_trfd_dct = {k:v for k,v in zip(ids,data_arr)}
+        print(f"Length of IDs:{len(ids)} | Unique IDs:{len(set(ids))} | Len of Dict:{len(data_trfd_dct)}")
+    else:
+        print("Length of IDs do not match size of expression array")
+        sys.exit()
+
+    ## write processed dataframe
+    data_trfd.to_csv(outtsv, sep="\t", index=False)
+    pkl.dump(data_trfd_dct, open(outpkl, 'wb'))
 
     return data_trfd
-
 
 #### PREPROCESS
 # %% MAIN
 non_exprs_idxs = [0,1] ## indexes for columns other than exprssion data i.e. gene info, etc.
-data_trfd      = process_exprs_data(df_main_tpm_imp, non_exprs_idxs, method = 'log')
-
-
+data_trfd      = process_exprs_data(df_main_tpm_imp, non_exprs_idxs, id_col = 0, method = 'log')
 
 
 # %% DEV
 # exprs = df_main_tpm_imp.iloc[:,2:]
-exprs = df_main_tpm_imp.drop(df_main_tpm_imp.columns[[1, 2]], axis=1)
-
+# exclude_cols = [0,1]
+# exprs    = df_main_tpm_imp.drop(df_main_tpm_imp.columns[exclude_cols], axis =1)
+# exprs_tf = exprs.add(0.00001).apply(np.log10)
 
 # %% TEST
-df_main_fpkm.shape
-df_main_fpkm.count()
+# fig = exprs_tf.plot.box(figsize=(20,8), rot = 90).get_figure()
+# fig.savefig('log_norm.pdf')
 
 
+# %% CHANGELOG
+## v01 [12/31/2020]
+## added functions to read imputed expression data
+## check for missin values
+## log transform
+## and write as dataframe and dict 
+## plot ransformed data
 
-
-
-# %%
-#### CHANGELOG
 
 
 # %%

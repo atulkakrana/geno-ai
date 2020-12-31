@@ -6,8 +6,10 @@
 #### code is not that efficient
 
 # %% ENV VARIABLES
+from dlcore import DATA_FL
 import os
 import sys
+from rpy2.robjects.packages import data
 import s3fs
 import seaborn as sns
 HOME = os.getenv("HOME")
@@ -18,11 +20,32 @@ sns.set_theme(style="darkgrid")
 # %% IMPORTS
 import itertools
 import pickle
+import yaml
 import pandas as pd
 import matplotlib.pyplot as plt
 
+## USER SETTINGS
+config  = yaml.load(open('prepare_labels.yaml', 'r'), Loader=yaml.FullLoader)
+DATA_FL = config['user']['data_file']
+LABS_FL = config['user']['labs_file']
+ATTR_FL = config['user']['attr_file']
+CLASS   = config['dev']['class_type']
 
 # %% HELPERS
+def config_reader(YAML):
+    '''
+    takes config from YAML files
+    '''
+    ## imports
+    import yaml
+
+    with open(YAML, 'r') as file:
+        # The FullLoader parameter handles the conversion from YAML
+        # scalar values to Python the dictionary format
+        config = yaml.load(file, Loader=yaml.FullLoader)
+
+    return config
+
 def frq_plot(cnts_lst):
     '''
     Generates Frequancy plot from a 
@@ -32,23 +55,22 @@ def frq_plot(cnts_lst):
     ax = sns.countplot(cnts_lst)
     return None
 
-# %% GET DATA
-def read_lab_data():
+def read_s3_df(s3_fl_path, sep = "\t"):
     '''
     read the disgenet gene-diseases labels and the 
     attributes file
     '''
-    labs_df = pd.read_csv(FS.open('s3://lachke-lab-data/work/0.geno-ai/data/disgenet/all_gene_disease_associations.tsv'), sep="\t")
-    labs_df.head()
+    # labs_df = pd.read_csv(FS.open('s3://lachke-lab-data/work/0.geno-ai/data/disgenet/all_gene_disease_associations.tsv'), sep="\t")
+    # labs_df.head()
 
-    cur_labs_df = pd.read_csv(FS.open('s3://lachke-lab-data/work/0.geno-ai/data/disgenet/curated_gene_disease_associations.tsv'), sep="\t")
-    cur_labs_df.head()
+    # cur_labs_df = pd.read_csv(FS.open('s3://lachke-lab-data/work/0.geno-ai/data/disgenet/curated_gene_disease_associations.tsv'), sep="\t")
+    # cur_labs_df.head()
 
-    dis_attr_df = pd.read_csv(FS.open('s3://lachke-lab-data/work/0.geno-ai/data/disgenet/disease_mappings_to_attributes.tsv'), sep="\t")
-    dis_attr_df.head()
+    # dis_attr_df = pd.read_csv(FS.open('s3://lachke-lab-data/work/0.geno-ai/data/disgenet/disease_mappings_to_attributes.tsv'), sep="\t")
+    # dis_attr_df.head()
 
-
-    return labs_df, cur_labs_df, dis_attr_df
+    out_df = pd.read_csv(s3_fl_path, sep=sep)
+    return out_df
 
 # %% DISEASES GENE LABELS
 def dis_attr_mask_gen(attr_df):
@@ -146,19 +168,18 @@ def gen_dis_labs_dct(cur_labs_df):
     print(f"Elements in labels dct:{len(labs_dct)}")
     return labs_dct
 
-def prepare_labs(indct):
+def process_labs(indct):
     '''
     remove certain diseases classes based on their
     low occurance in disgeneset, and based n the 
     manual curation of MSH diseases class codes
     '''
-
     ## outputs
     labs_dct     = {}
     labs_bin_dct = {}
 
     ## inputs
-    remove_set = set(['C01', 'C07', 'C09', 'C16', 'C21', 'C22', 'C23', 'C24' , 'C26'])
+    remove_set = set(['C01', 'C07', 'C09', 'C16', 'C21', 'C22', 'C23', 'C24' , 'C26']) ## these will be removed
     binary_tar = set(['C11',]) ## these will form positive category
 
     ## generate labels for
@@ -180,7 +201,6 @@ def prepare_labs(indct):
         else:
             labs_bin_dct[k] = "neg"
 
-            
     ## visualize
     elem_type_cnts = list(itertools.chain.from_iterable(labs_dct.values()))
     ax1            = sns.countplot(y=elem_type_cnts, order = pd.Series(elem_type_cnts).value_counts().index); plt.show()
@@ -195,24 +215,52 @@ def prepare_labs(indct):
     print(f"Elements in labels dct:{len(labs_dct)}")
     return labs_dct, labs_bin_dct
 
+def prepare_labs(DATA_FL, labs_dct):
+    '''
+    reads keys from final processed data (TSV) file, and 
+    generates a list of labels for ML, plus
+    writes a labelled dataset for manual inspection
+    '''
+
+    data = pd.read_csv(DATA_FL, sep = "\t")
+    ids  = data.iloc[:, 0].to_list()
+
+
+
+    
+
+    return None
+
 # %% MAIN - INTERACTIVE
 ## %%capture
 # labs_df, cur_labs_df, dis_attr_df = read_lab_data()
 # filt_attr_df  = dis_attr_mask_gen(dis_attr_df)
 # gene_labs_dct = gen_dis_labs_dct(cur_labs_df)
-# fin_labs_dct, bin_labs_dct = prepare_labs(gene_labs_dct)
+# fin_labs_dct, bin_labs_dct = process_labs(gene_labs_dct)
 
 # %% TEST
 
 
 # %% DEV
+data = pd.read_csv(DATA_FL, sep = "\t")
+data.set_index(data.columns[0], inplace = True)
+# ids  = data.iloc[:, 0].to_list()
 
 
 # %% MAIN
 def main():
-    labs_df, cur_labs_df, dis_attr_df = read_lab_data()
-    gene_labs_dct                     = gen_dis_labs_dct(cur_labs_df)
-    fin_labs_dct, bin_labs_dct        = prepare_labs(gene_labs_dct)
+    cur_labs_df    = read_s3_df(LABS_FL, sep = "\t")
+    gene_labs_dct  = gen_dis_labs_dct(cur_labs_df)
+    fin_labs_dct, bin_labs_dct = process_labs(gene_labs_dct)
+    if CLASS   = "binary":
+        labs_dct = prepare_labs(bin_labs_dct)
+    elif CLASS = "multi":
+        prepare_labs(bin_labs_dct)
+        labs_dct = prepare_labs(fin_labs_dct)
+    else:
+        print(f"Classificstion method '{CLASS}' is not yet implemented")
+        sys.exit()
+
 
     return None
 
