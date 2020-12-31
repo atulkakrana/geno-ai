@@ -1,0 +1,10 @@
+## this is the config file for 
+## prepare data code
+
+user:
+  data_file: "s3://lachke-lab-data/work/0.geno-ai/data/rna-seq/E-MTAB-6798/E-MTAB-6798-query-results.tpms.impute.tsv"
+  labs_file: "s3://lachke-lab-data/work/0.geno-ai/data/disgenet/curated_gene_disease_associations.tsv"
+  attr_file: "s3://lachke-lab-data/work/0.geno-ai/data/disgenet/disease_mappings_to_attributes.tsv"
+
+dev:
+  class_type: 'binary' ## Options: binary | multi

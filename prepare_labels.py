@@ -69,7 +69,7 @@ def read_s3_df(s3_fl_path, sep = "\t"):
     # dis_attr_df = pd.read_csv(FS.open('s3://lachke-lab-data/work/0.geno-ai/data/disgenet/disease_mappings_to_attributes.tsv'), sep="\t")
     # dis_attr_df.head()
 
-    out_df = pd.read_csv(s3_fl_path, sep=sep)
+    out_df = pd.read_csv(FS.open(s3_fl_path), sep=sep)
     return out_df
 
 # %% DISEASES GENE LABELS
@@ -226,8 +226,6 @@ def prepare_labs(DATA_FL, labs_dct):
     ids  = data.iloc[:, 0].to_list()
 
 
-
-    
 
     return None
 
