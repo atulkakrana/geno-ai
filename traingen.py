@@ -8,16 +8,16 @@ from dlcore import *
 
 
 # %% INPUTS
-LAB_PKL = "labs_bin_dct.p" ## could be binary labels, multi-label or multi-class from "prepare_labels.py"
-DATA_FL = "exprs_data_cpm.p"
+DATA_PKL = "train_data.p"
 
 # %% FUNCTIONS
-def prep_trainset(LAB_PKL):
+def prep_trainset(DATA_PKL):
     '''
-    Generates training/test set for ML/DL
+    Generates training/test set for ML/DL;
+    takes output of DLCORE
     '''
 
-    data_dct     = pickle.load( open( "train_data.p", "rb" ) )
+    data_dct     = pickle.load( open( DATA_PKL, "rb" ) )
     labels_enc   = encode_labels(data_dct)
     data_exprs   = data_dct['exp_data']
 
