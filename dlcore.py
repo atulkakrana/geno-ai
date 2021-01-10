@@ -212,7 +212,7 @@ def encode_labels():
 
     return None
 
-# %% DEV
+# %% MAIN - INTERACTIVE
 species      = "mouse"
 labs_dct_pkl = "labs_bin_dct.p"
 labs_dct, unmap_lst = update_labs_to_ensembl(labs_dct_pkl, species)
@@ -225,9 +225,32 @@ LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-lab
 DATA_PKL     = "data_imp_trfd_dct.p"
 labs_pkl     = prepare_labels_data(DATA_PKL, LAB_PKL, mode='binary')
 
+# %% DEV
+
 # %% TEST
 # import pickle
 # labs_dct = pickle.load( open( "labs_dct_ensembl.p", "rb" ) )
+
+# %% MAIN
+def main():
+    species      = "mouse"
+    labs_dct_pkl = "labs_bin_dct.p"
+    labs_dct, unmap_lst = update_labs_to_ensembl(labs_dct_pkl, species)
+
+    LAB_PKL      = "labs_bin_dct_ensembl.p" ## could be binary labels, multi-label or multi-class
+    DATA_PKL     = "data_imp_trfd_dct.p"
+    labs_pkl     = gen_data_labels(DATA_PKL, LAB_PKL)
+
+    LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-label or multi-class
+    DATA_PKL     = "data_imp_trfd_dct.p"
+    labs_pkl     = prepare_labels_data(DATA_PKL, LAB_PKL, mode='binary')
+
+    return None
+
+# %% 
+if __name__ == "__main__":
+    main()
+    pass
 
 
 # %% CHANGELOG
