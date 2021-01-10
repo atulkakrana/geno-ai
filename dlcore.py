@@ -253,7 +253,6 @@ data_dct     = pickle.load( open( "train_data.p", "rb" ) )
 data_dct['exp_data'].shape
 
 
-
 # %% MAIN
 def main():
     species      = "mouse"
