@@ -24,6 +24,8 @@ It may also be useful to use datsets from different models to account for inter-
 
 2. https://www.ebi.ac.uk/gxa/sc/experiments/E-ENAD-15/results/tsne [Single-cell multiple tissues]
 
+3. https://lincsproject.org/LINCS/tools/workflows/find-the-best-place-to-obtain-the-lincs-l1000-data [L1000]
+
 
 
 <br/>
