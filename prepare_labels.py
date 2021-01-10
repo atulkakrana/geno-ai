@@ -6,7 +6,7 @@
 #### code is not that efficient
 
 # %% ENV VARIABLES
-from dlcore import DATA_FL
+from dlcore import *
 import os
 import sys
 from rpy2.robjects.packages import data
@@ -25,11 +25,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 ## USER SETTINGS
-config  = yaml.load(open('prepare_labels.yaml', 'r'), Loader=yaml.FullLoader)
-DATA_FL = config['user']['data_file']
-LABS_FL = config['user']['labs_file']
-ATTR_FL = config['user']['attr_file']
-CLASS   = config['dev']['class_type']
+config      = yaml.load(open('prepare_labels.yaml', 'r'), Loader=yaml.FullLoader)
+DATA_FL     = config['user']['data_file']
+LABS_FL     = config['user']['labs_file']
+ATTR_FL     = config['user']['attr_file']
+LABS_ALL_FL = config['user']['labs_all_file']
+CLASS       = config['dev']['class_type']
 
 # %% HELPERS
 def config_reader(YAML):
@@ -120,7 +121,7 @@ def dis_attr_mask_gen(attr_df):
     print(f"To retain:{sum(mask)}   | Retained:{len(filt_attr_df.index)}")
     return filt_attr_df
 
-def gen_dis_labs_dct(cur_labs_df):
+def gen_dis_labs_dct(labs_df):
     '''
     For every gene provide all listed 
     MSH diseases codes as labels
@@ -133,7 +134,7 @@ def gen_dis_labs_dct(cur_labs_df):
     labs_dct = {}
 
     ## inputs
-    grdf = cur_labs_df.groupby("geneSymbol")
+    grdf = labs_df.groupby("geneSymbol")
     gdct = grdf.groups
     gkey = gdct.keys()
     gval = gdct.values()
@@ -145,7 +146,7 @@ def gen_dis_labs_dct(cur_labs_df):
         vals = []
         
         for idx in list(v):
-            astr = cur_labs_df.loc[idx]['diseaseClass']
+            astr = labs_df.loc[idx]['diseaseClass']
             if pd.isna(astr):
                 pass
             else:
@@ -158,21 +159,24 @@ def gen_dis_labs_dct(cur_labs_df):
         labs_dct[k] = vals
 
     ## visualize
-    elem_cnts = [len(x) for x in labs_dct.values()]
-    ax1        = sns.countplot(x=elem_cnts); plt.show()
+    elem_cnts   = [len(x) for x in labs_dct.values()]
+    ax1         = sns.countplot(x=elem_cnts); plt.show()
     
-    elem_type_cnts = list(itertools.chain.from_iterable(labs_dct.values()))
-    ax2        = sns.countplot(y=elem_type_cnts, order = pd.Series(elem_type_cnts).value_counts().index)
+    elem_type_cnts  = list(itertools.chain.from_iterable(labs_dct.values()))
+    ax2             = sns.countplot(y=elem_type_cnts, order = pd.Series(elem_type_cnts).value_counts().index)
     plt.show()
 
     print(f"Elements in labels dct:{len(labs_dct)}")
     return labs_dct
 
-def process_labs(indct):
+def process_labs(indct, gene_all_labs_dct, mode = 'binary'):
     '''
     remove certain diseases classes based on their
     low occurance in disgeneset, and based n the 
     manual curation of MSH diseases class codes
+    
+    binary: two labels and None;
+    mclass, mlabel: all labels as-is and unlabelled as None or 'None'
     '''
     ## outputs
     labs_dct     = {}
@@ -188,18 +192,51 @@ def process_labs(indct):
         nset = v-remove_set
         labs_dct[k] = nset
     
-
     ## generate labels for binary classification
     ## binarize labels, any gene
     ## with eye diseases gets pos
     ## labels and others get neg
     ## genes with eye disease along
     ## with others also get pos label
-    for k,v in labs_dct.items():
-        if binary_tar.intersection(v):
-            labs_bin_dct[k] = "pos"
-        else:
-            labs_bin_dct[k] = "neg"
+    likely_pos  = []
+    pos         = []
+    neg         = []
+    if mode == 'binary':
+        for k,v in labs_dct.items():
+            if binary_tar.intersection(v):
+                label = "pos"
+                pos.append(k)
+            else:
+                label = "neg"
+
+                ## cleanup negative using the
+                ## labels from text mining; i.e.
+                ## silver set labels. the negavtive
+                ## set should not have target labels
+                tmp_dis_set = gene_all_labs_dct.get(k)
+                # print(f"Diseases codes from full labels set:{tmp_dis_set}")
+                if binary_tar.intersection(tmp_dis_set):
+                    ## evidences from text mining
+                    ## show gene assosiation with
+                    ## positive class, hence it's
+                    ## likely positive, remove from
+                    ## negative list and mark unlabelled
+                    print(f"Likely Positive gene:{k}")
+                    likely_pos.append(k)
+                    label = None
+                else:
+                    neg.append(k)
+                    pass
+            
+            ## assign final label
+            if label:
+                labs_bin_dct[k] = label
+    else:
+        print(f"The mode:{mode} is not understood")
+        sys.exit(1)
+        pass
+
+    print(f"Postive:{len(pos)} | Likely Positive (removed from negative):{len(likely_pos)} | Negative:{len(neg)}")
 
     ## visualize
     elem_type_cnts = list(itertools.chain.from_iterable(labs_dct.values()))
@@ -212,53 +249,43 @@ def process_labs(indct):
     pickle.dump( labs_dct, open( "labs_dct.p", "wb" ) )
     pickle.dump( labs_bin_dct, open( "labs_bin_dct.p", "wb" ) )
 
-    print(f"Elements in labels dct:{len(labs_dct)}")
-    return labs_dct, labs_bin_dct
-
-def prepare_labs(DATA_FL, labs_dct):
-    '''
-    reads keys from final processed data (TSV) file, and 
-    generates a list of labels for ML, plus
-    writes a labelled dataset for manual inspection
-    '''
-
-    data = pd.read_csv(DATA_FL, sep = "\t")
-    ids  = data.iloc[:, 0].to_list()
-
-
-
-    return None
+    print(f"Elements in labels dct:{len(labs_dct)} | binary_dct:{len(labs_bin_dct)}")
+    return labs_dct, labs_bin_dct, pos, neg, likely_pos
 
 # %% MAIN - INTERACTIVE
-## %%capture
-# labs_df, cur_labs_df, dis_attr_df = read_lab_data()
-# filt_attr_df  = dis_attr_mask_gen(dis_attr_df)
-# gene_labs_dct = gen_dis_labs_dct(cur_labs_df)
-# fin_labs_dct, bin_labs_dct = process_labs(gene_labs_dct)
+# %%capture
+## curated labels
+cur_labs_df    = read_s3_df(LABS_FL, sep = "\t")
+gene_labs_dct  = gen_dis_labs_dct(cur_labs_df)
+
+## all lables including text mining
+all_labs_df         = read_s3_df(LABS_ALL_FL, sep = "\t")
+gene_all_labs_dct   = gen_dis_labs_dct(all_labs_df)
+
+## generate final labels
+fin_labs_dct, bin_labs_dct, pos, neg, likely_pos = process_labs(gene_labs_dct, gene_all_labs_dct, mode = 'binary')
 
 # %% TEST
-
+likely_pos[1:10]
 
 # %% DEV
-data = pd.read_csv(DATA_FL, sep = "\t")
-data.set_index(data.columns[0], inplace = True)
+# data = pd.read_csv(DATA_FL, sep = "\t")
+# data.set_index(data.columns[0], inplace = True)
 # ids  = data.iloc[:, 0].to_list()
 
 
 # %% MAIN
 def main():
-    cur_labs_df    = read_s3_df(LABS_FL, sep = "\t")
-    gene_labs_dct  = gen_dis_labs_dct(cur_labs_df)
-    fin_labs_dct, bin_labs_dct = process_labs(gene_labs_dct)
-    if CLASS   = "binary":
-        labs_dct = prepare_labs(bin_labs_dct)
-    elif CLASS = "multi":
-        prepare_labs(bin_labs_dct)
-        labs_dct = prepare_labs(fin_labs_dct)
-    else:
-        print(f"Classificstion method '{CLASS}' is not yet implemented")
-        sys.exit()
+    ## curated labels
+    cur_labs_df         = read_s3_df(LABS_FL, sep = "\t")
+    gene_labs_dct       = gen_dis_labs_dct(cur_labs_df)
 
+    ## all lables including text mining
+    all_labs_df         = read_s3_df(LABS_ALL_FL, sep = "\t")
+    gene_all_labs_dct   = gen_dis_labs_dct(all_labs_df)
+
+    ## generate final labels
+    fin_labs_dct, bin_labs_dct, pos, neg, likely_pos = process_labs(gene_labs_dct, gene_all_labs_dct, mode = 'binary')
 
     return None
 
@@ -283,5 +310,7 @@ if __name__ == "__main__":
 ##              Use diseasesClassNameMSH (from diseases attr files)
 ## then map these labels to labs file i.e. assign broader diseases class to each CUI which will serve as label
 
-## Which set of gene list to use - curated?
-## Which diseases labels to choose and how?
+## Expand positive gene list - 
+##      include genes with target category (C11) from all labelsfile
+##      specifically those with 'HPO' label under the 'source' column
+##      also check what other sources can be included 

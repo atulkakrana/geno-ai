@@ -4,6 +4,11 @@
 ## to generate the train set
 
 # %% IMPORT
+import sys
+import pickle
+import seaborn as sns
+import pandas as pd
+import matplotlib.pyplot as plt
 
 # %% FUNCTIONS
 def hugo_to_ense(species, aset):
@@ -97,48 +102,132 @@ def gen_data_labels(data_pkl, labs_dct_pkl):
     pandas
     '''
 
-    ## imports
-    import sys
-    import pickle
-
     ## outputs
-    out_pkl = "%s_labelled.p" % (data_pkl.rpartition(".")[0])
-    out_txt = "%s_labelled.tsv" % (data_pkl.rpartition(".")[0])
+    out_pkl     = "%s_labels.p" % (data_pkl.rpartition(".")[0])
+    out_txt     = "%s_labelled.tsv" % (data_pkl.rpartition(".")[0])
     
     ## inputs
-    exprs_df = pickle.load( open( data_pkl, "rb" ) ) ## dataframe
-    labs_dct = pickle.load( open( labs_dct_pkl, "rb" ) ) ## dict
+    exprs_dct   = pickle.load( open( data_pkl, "rb" ) ) ## dataframe
+    labs_dct    = pickle.load( open( labs_dct_pkl, "rb" ) ) ## dict
 
-    ## generate label series
-    gids = exprs_df['Gene ID']
-    labs = [labs_dct.get(id) for id in gids]
+    ## generate label series;
+    ## how to handle None's?
+    gids        = list(exprs_dct.keys())
+    labs        = [labs_dct.get(id) for id in gids]
+    labs_dct    = {id:labs_dct.get(id) for id in gids}
 
     ## sanity check
     if len(labs) != len(gids):
-        sys.exit  
+        ## labelled data may not have 
+        ## information for all genes;
+        ## should we skip and call these
+        ## unlabelled
+        print(f"The numbers keys in data doesn't match with number of IDs in lables")
+        sys.exit(1)
+    else:
+        pass
 
     ## add labels to exprs data
+    exprs_df    = pd.DataFrame.from_dict(exprs_dct, orient='index')
     exprs_df["Labels"] = labs
 
     ## pickle and write for inspection
-    pickle.dump(exprs_df, open(out_pkl, "wb" ) )
+    pickle.dump(labs_dct, open(out_pkl, "wb" ) )
     exprs_df.to_csv(out_txt, sep="\t", index = False)
 
     return out_pkl
 
+def prepare_labels_data(dpkl, lpkl, mode='binary'):
+    '''
+    Process labels for ML/DL
+    classifier method i.e. binary, multi-class (mclass),
+    multi-label (mlabel)
+
+
+    binary: retains top two labels and converts others to None;
+    mclass, mlabel: retains all labels as-is and labels None/'None'
+
+    OUTPUT: trimmed dicts with just labelled classes
+    '''
+
+    ## imports
+    from collections import Counter
+
+    ## outputs
+    tdata_pkl  = "train_data.p"
+    pdata_pkl  = "pred_data.p"
+    tlabs_pkl  = "train_label.p"
+    
+    ## inputs
+    lab_dct  = pickle.load( open(lpkl, "rb" ) ) ## dict
+    exp_dct  = pickle.load( open(dpkl, "rb" ) ) ## dataframe
+
+    ## cleanup labels, if there
+    ## are any artifacts
+    if mode == 'binary':
+        vals    = list(lab_dct.values())
+        # cntr    = Counter(list(vals))
+        # cntr_s  = sorted(list(cntr.items()), key = lambda x: -x[1])
+        # print(f"Labels Freq:{cntr_s}")
+
+        ## visualize
+        elem_cnts = [x if x is not None else 'None' for x in vals ]
+        ax1       = sns.countplot(x=elem_cnts); plt.show()
+
+        ## collect ids for labelled data,
+        ## and unlabelled data
+        train_ids = []
+        pred_ids  = []
+        for k,v in lab_dct.items():
+            if (v is not None) and (v != 'None'):
+                train_ids.append(k)
+            else:
+                pred_ids.append(k)
+        
+        ## seprate labelled and unlabelled data
+        print(f"Labelled instances:{len(train_ids)} | unlabelled instances:{len(pred_ids)}")
+        tdata_dct    = {k:exp_dct[k] for k in train_ids} ## didn't use GET method so as to raise error
+        tlabs_dct    = {k:lab_dct[k] for k in train_ids}
+        pdata_dct    = {k:exp_dct[k] for k in pred_ids}
+
+    else:
+        ## add mclass and mlabel support
+        print(f"Labeling mode:{mode} not supported")
+        sys.exit(1)
+
+    ## write final train data and labels
+    pickle.dump(tdata_dct, open(tdata_pkl, "wb" ) )
+    pickle.dump(tlabs_dct, open(tlabs_pkl, "wb" ) )
+    pickle.dump(pdata_dct, open(pdata_pkl, "wb" ) )
+
+    print(f"Instances in train data dct:{len(tdata_dct)} | train labels dct:{len(tlabs_dct)}")
+    print(f"Pred dct:{len(pdata_dct)}")
+    return tdata_dct, pdata_dct
+
+def encode_labels():
+    '''
+    encode labels for ML/DL
+    '''
+
+
+    return None
 
 # %% DEV
 species      = "mouse"
 labs_dct_pkl = "labs_bin_dct.p"
 labs_dct, unmap_lst = update_labs_to_ensembl(labs_dct_pkl, species)
 
-LAB_PKL = "labs_bin_dct_ensembl.p" ## could be binary labels, multi-label or multi-class
-DATA_FL = "exprs_data_cpm.p"
-lab_data_pkl = gen_data_labels(DATA_FL, LAB_PKL)
+LAB_PKL      = "labs_bin_dct_ensembl.p" ## could be binary labels, multi-label or multi-class
+DATA_PKL     = "data_imp_trfd_dct.p"
+labs_pkl     = gen_data_labels(DATA_PKL, LAB_PKL)
+
+LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-label or multi-class
+DATA_PKL     = "data_imp_trfd_dct.p"
+labs_pkl     = prepare_labels_data(DATA_PKL, LAB_PKL, mode='binary')
 
 # %% TEST
-import pickle
-labs_dct = pickle.load( open( "labs_dct_ensembl.p", "rb" ) )
+# import pickle
+# labs_dct = pickle.load( open( "labs_dct_ensembl.p", "rb" ) )
 
 
 # %% CHANGELOG

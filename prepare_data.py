@@ -129,7 +129,7 @@ def process_exprs_data(self, non_exprs_idxs, id_col = 0, method = "log"):
     outpkl = "%s_dct.p" % outtsv.rpartition(".")[0]
 
     ## sanity check for missing data
-    emp_bool = check_empty_cells(self)
+    emp_bool   = check_empty_cells(self)
 
     ## extract exprs data
     exprs      = self.drop(self.columns[non_exprs_idxs], axis=1)
@@ -142,14 +142,14 @@ def process_exprs_data(self, non_exprs_idxs, id_col = 0, method = "log"):
 
     ## regenrate dataframe;
     ## combine expression and other columns
-    non_exprs_data = self.iloc[:,non_exprs_idxs]
-    data_trfd      = pd.concat([non_exprs_data,exprs_trfd], axis = 1)
+    non_exprs_data  = self.iloc[:,non_exprs_idxs]
+    data_trfd       = pd.concat([non_exprs_data,exprs_trfd], axis = 1)
 
     ## generate dictionary of expression
-    ids      = list(data_trfd.iloc[:, id_col])
-    data_arr = exprs_trfd.values
+    ids             = list(data_trfd.iloc[:, id_col])
+    data_arr        = exprs_trfd.values
     ## sanity check
-    if len(ids) == data_arr.shape[0]:
+    if len(ids)     == data_arr.shape[0]:
         data_trfd_dct = {k:v for k,v in zip(ids,data_arr)}
         print(f"Length of IDs:{len(ids)} | Unique IDs:{len(set(ids))} | Len of Dict:{len(data_trfd_dct)}")
     else:
