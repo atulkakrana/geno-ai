@@ -17,8 +17,9 @@ def prep_trainset(LAB_PKL):
     Generates training/test set for ML/DL
     '''
 
-    labs_dct, unmap_lst = update_labs_to_ensembl(LAB_PKL, species)
-    lab_data_pkl        = gen_data_labels(DATA_FL, labs_dct)
+    data_dct     = pickle.load( open( "train_data.p", "rb" ) )
+    labels_enc   = encode_labels(data_dct)
+    data_exprs   = data_dct['exp_data']
 
 
 
