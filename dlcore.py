@@ -8,6 +8,7 @@ import sys
 import pickle
 import seaborn as sns
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 
 # %% FUNCTIONS
@@ -154,13 +155,14 @@ def prepare_labels_data(dpkl, lpkl, mode='binary'):
     from collections import Counter
 
     ## outputs
+    tdata_dct  = {}
+    pdata_dct  = {}
     tdata_pkl  = "train_data.p"
     pdata_pkl  = "pred_data.p"
-    tlabs_pkl  = "train_label.p"
     
     ## inputs
-    lab_dct  = pickle.load( open(lpkl, "rb" ) ) ## dict
-    exp_dct  = pickle.load( open(dpkl, "rb" ) ) ## dataframe
+    lab_dct    = pickle.load( open(lpkl, "rb" ) ) ## dict
+    exp_dct    = pickle.load( open(dpkl, "rb" ) ) ## dataframe
 
     ## cleanup labels, if there
     ## are any artifacts
@@ -186,50 +188,71 @@ def prepare_labels_data(dpkl, lpkl, mode='binary'):
         
         ## seprate labelled and unlabelled data
         print(f"Labelled instances:{len(train_ids)} | unlabelled instances:{len(pred_ids)}")
-        tdata_dct    = {k:exp_dct[k] for k in train_ids} ## didn't use GET method so as to raise error
-        tlabs_dct    = {k:lab_dct[k] for k in train_ids}
-        pdata_dct    = {k:exp_dct[k] for k in pred_ids}
+        tdata    = np.array([exp_dct[k] for k in train_ids])
+        tlabs    = [lab_dct[k] for k in train_ids]
+        pdata    = [exp_dct[k] for k in pred_ids]
 
     else:
         ## add mclass and mlabel support
         print(f"Labeling mode:{mode} not supported")
         sys.exit(1)
 
+    ## prepare dicts for ML/DL
+    tdata_dct['exp_data'] = tdata ## data/features and labels should be in same order
+    tdata_dct['labels']   = tlabs ## data/features and labels should be in same order 
+    pdata_dct['exp_data'] = pdata ## data/features and labels should be in same order
+    pdata_dct['labels']   = [None]*len(pdata) ## data/features and labels should be in same order
+
     ## write final train data and labels
     pickle.dump(tdata_dct, open(tdata_pkl, "wb" ) )
-    pickle.dump(tlabs_dct, open(tlabs_pkl, "wb" ) )
     pickle.dump(pdata_dct, open(pdata_pkl, "wb" ) )
 
-    print(f"Instances in train data dct:{len(tdata_dct)} | train labels dct:{len(tlabs_dct)}")
-    print(f"Pred dct:{len(pdata_dct)}")
+    print(f"Instances in train data dct:{len(tdata)} | train labels dct:{len(tlabs)}")
+    print(f"Pred dct:{len(pdata)}")
     return tdata_dct, pdata_dct
 
-def encode_labels():
+def encode_labels(data_dct):
     '''
-    encode labels for ML/DL
+    takes dict of labels, and 
+    encodes labels for ML/DL
     '''
 
+    ## imports
+    from sklearn import preprocessing
+    le = preprocessing.LabelEncoder()
 
-    return None
+    ## inputs
+    labels = data_dct['labels']
+    le.fit(labels)
+
+    ## encode labels
+    labels_enc = le.transform(labels)
+
+    return labels_enc
 
 # %% MAIN - INTERACTIVE
-species      = "mouse"
-labs_dct_pkl = "labs_bin_dct.p"
-labs_dct, unmap_lst = update_labs_to_ensembl(labs_dct_pkl, species)
+# species      = "mouse"
+# labs_dct_pkl = "labs_bin_dct.p"
+# labs_dct, unmap_lst = update_labs_to_ensembl(labs_dct_pkl, species)
 
-LAB_PKL      = "labs_bin_dct_ensembl.p" ## could be binary labels, multi-label or multi-class
-DATA_PKL     = "data_imp_trfd_dct.p"
-labs_pkl     = gen_data_labels(DATA_PKL, LAB_PKL)
+# LAB_PKL      = "labs_bin_dct_ensembl.p" ## could be binary labels, multi-label or multi-class
+# DATA_PKL     = "data_imp_trfd_dct.p"
+# labs_pkl     = gen_data_labels(DATA_PKL, LAB_PKL)
 
 LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-label or multi-class
 DATA_PKL     = "data_imp_trfd_dct.p"
 labs_pkl     = prepare_labels_data(DATA_PKL, LAB_PKL, mode='binary')
 
+data_dct     = pickle.load( open( "train_data.p", "rb" ) )
+labels_enc   = encode_labels(data_dct)
+
 # %% DEV
 
 # %% TEST
-# import pickle
-# labs_dct = pickle.load( open( "labs_dct_ensembl.p", "rb" ) )
+data_dct     = pickle.load( open( "train_data.p", "rb" ) )
+data_dct['exp_data'].shape
+
+
 
 # %% MAIN
 def main():
