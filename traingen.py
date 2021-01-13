@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
-## Generate Training Data
-## Config in YAML files
+## Reads processed data
+## and labels and prepares
+## in format required for 
+## deep-learning
 
 # %% IMPORTS
 from dlcore import *
@@ -13,26 +15,35 @@ DATA_PKL = "train_data.p"
 # %% FUNCTIONS
 def prep_trainset(DATA_PKL):
     '''
+    DATA_PKL: holds different data, and labels
+    as equal length arrays and lists.
+
     Generates training/test set for ML/DL;
-    takes output of DLCORE
+    takes output of DLCORE.
     '''
 
-    data_dct     = pickle.load( open( DATA_PKL, "rb" ) )
-    labels_enc   = encode_labels(data_dct)
-    data_exprs   = data_dct['exp_data']
+    data_dct    = pickle.load( open( DATA_PKL, "rb" ) )
+    labs_enc    = encode_labels(data_dct)
+    data_exp    = data_dct['exp_data']
 
 
 
-    return None
+    ## off for deep learning
+    payload     = { 'data_exp':data_exp, 
+                    'labels':labs_enc
+                    }
+    return payload
 
 # %% MAIN - INTERACTIVE
-tset = prep_trainset()
+# data_dct = prep_trainset(DATA_PKL)
 
 # %% TEST
 
 
 # %% MAIN
-
+def main():
+    payload = prep_trainset(DATA_PKL)
+    return None
 
 # %% RUN
 if __name__ == "__main__":

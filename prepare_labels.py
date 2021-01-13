@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-## Prepare labesl for genes
+## Prepare labels based on DisGeneNet
 ## NOTE: here we have tried to use 
-#### pandas as much we can so the
-#### code is not that efficient
+##  pandas as much we can so the code
+##  is not very efficient
 
 # %% ENV VARIABLES
 from dlcore import *
@@ -15,7 +15,6 @@ import seaborn as sns
 HOME = os.getenv("HOME")
 FS   = s3fs.S3FileSystem(anon=False, profile_name="dips")
 sns.set_theme(style="darkgrid")
-
 
 # %% IMPORTS
 import itertools
@@ -253,34 +252,34 @@ def process_labs(indct, gene_all_labs_dct, mode = 'binary'):
     return labs_dct, labs_bin_dct, pos, neg, likely_pos
 
 # %% MAIN - INTERACTIVE
-# %%capture
-## curated labels
-cur_labs_df    = read_s3_df(LABS_FL, sep = "\t")
-gene_labs_dct  = gen_dis_labs_dct(cur_labs_df)
+# ## %%capture
+# ## curated labels
+# cur_labs_df    = read_s3_df(LABS_FL, sep = "\t")
+# gene_labs_dct  = gen_dis_labs_dct(cur_labs_df)
 
-## all lables including text mining
-all_labs_df         = read_s3_df(LABS_ALL_FL, sep = "\t")
-gene_all_labs_dct   = gen_dis_labs_dct(all_labs_df)
+# ## all lables including text mining
+# all_labs_df         = read_s3_df(LABS_ALL_FL, sep = "\t")
+# gene_all_labs_dct   = gen_dis_labs_dct(all_labs_df)
 
-## generate final labels
-fin_labs_dct, bin_labs_dct, pos, neg, likely_pos = process_labs(gene_labs_dct, gene_all_labs_dct, mode = 'binary')
+# ## generate final labels
+# fin_labs_dct, bin_labs_dct, pos, neg, likely_pos = process_labs(gene_labs_dct, gene_all_labs_dct, mode = 'binary')
 
 # %% TEST
-likely_pos[1:10]
+# likely_pos[1:10]
 
 # %% DEV
 # data = pd.read_csv(DATA_FL, sep = "\t")
 # data.set_index(data.columns[0], inplace = True)
 # ids  = data.iloc[:, 0].to_list()
 
-
 # %% MAIN
 def main():
     ## curated labels
-    cur_labs_df         = read_s3_df(LABS_FL, sep = "\t")
-    gene_labs_dct       = gen_dis_labs_dct(cur_labs_df)
+    cur_labs_df    = read_s3_df(LABS_FL, sep = "\t")
+    gene_labs_dct  = gen_dis_labs_dct(cur_labs_df)
 
-    ## all lables including text mining
+    ## all labels including 
+    ## from the text mining
     all_labs_df         = read_s3_df(LABS_ALL_FL, sep = "\t")
     gene_all_labs_dct   = gen_dis_labs_dct(all_labs_df)
 

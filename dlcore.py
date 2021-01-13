@@ -11,7 +11,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-# %% FUNCTIONS
+# %% HELPERS
 def hugo_to_ense(species, aset):
     '''
     Maps hugo symbols to a Ensembl IDs
@@ -138,7 +138,27 @@ def gen_data_labels(data_pkl, labs_dct_pkl):
 
     return out_pkl
 
-def prepare_labels_data(dpkl, lpkl, mode='binary'):
+def encode_labels(data_dct):
+    '''
+    Takes main dict of data and labels,
+    and encodes labels for ML/DL
+    '''
+
+    ## imports
+    from sklearn import preprocessing
+    le = preprocessing.LabelEncoder()
+
+    ## inputs
+    labels = data_dct['labels']
+    le.fit(labels)
+
+    ## encode labels
+    labels_enc = le.transform(labels)
+
+    return labels_enc
+
+# %% FUNCTIONS
+def prepare_data_n_labels(dpkl, lpkl, mode='binary'):
     '''
     Process labels for ML/DL
     classifier method i.e. binary, multi-class (mclass),
@@ -211,24 +231,6 @@ def prepare_labels_data(dpkl, lpkl, mode='binary'):
     print(f"Pred dct:{len(pdata)}")
     return tdata_dct, pdata_dct
 
-def encode_labels(data_dct):
-    '''
-    takes dict of labels, and 
-    encodes labels for ML/DL
-    '''
-
-    ## imports
-    from sklearn import preprocessing
-    le = preprocessing.LabelEncoder()
-
-    ## inputs
-    labels = data_dct['labels']
-    le.fit(labels)
-
-    ## encode labels
-    labels_enc = le.transform(labels)
-
-    return labels_enc
 
 # %% MAIN - INTERACTIVE
 # species      = "mouse"
@@ -239,18 +241,15 @@ def encode_labels(data_dct):
 # DATA_PKL     = "data_imp_trfd_dct.p"
 # labs_pkl     = gen_data_labels(DATA_PKL, LAB_PKL)
 
-LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-label or multi-class
-DATA_PKL     = "data_imp_trfd_dct.p"
-labs_pkl     = prepare_labels_data(DATA_PKL, LAB_PKL, mode='binary')
-
-data_dct     = pickle.load( open( "train_data.p", "rb" ) )
-labels_enc   = encode_labels(data_dct)
+# LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-label or multi-class
+# DATA_PKL     = "data_imp_trfd_dct.p"
+# labs_pkl     = prepare_data_n_labels(DATA_PKL, LAB_PKL, mode='binary')
 
 # %% DEV
 
 # %% TEST
-data_dct     = pickle.load( open( "train_data.p", "rb" ) )
-data_dct['exp_data'].shape
+# data_dct     = pickle.load( open( "train_data.p", "rb" ) )
+# data_dct['exp_data'].shape
 
 
 # %% MAIN
@@ -265,7 +264,7 @@ def main():
 
     LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-label or multi-class
     DATA_PKL     = "data_imp_trfd_dct.p"
-    labs_pkl     = prepare_labels_data(DATA_PKL, LAB_PKL, mode='binary')
+    labs_pkl     = prepare_data_n_labels(DATA_PKL, LAB_PKL, mode='binary')
 
     return None
 

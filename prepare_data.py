@@ -16,7 +16,6 @@ from rpy2.robjects.packages import importr
 from rpy2.robjects.conversion import localconverter
 import matplotlib.pyplot as plt
 
-
 ## USER SETTINGS
 config  = yaml.load(open('prepare_data.yaml', 'r'), Loader=yaml.FullLoader)
 DATA_FL = config['user']['data_file']
@@ -30,7 +29,6 @@ def df_py_to_r(df_py):
         df_r = ro.conversion.py2rpy(df_py)
     return df_r
 
-# %% FUNCTIONS
 def data_reader(fl_path, sep = "\t", local = False):
     '''
     reads imputed expression data
@@ -71,6 +69,7 @@ def data_reader(fl_path, sep = "\t", local = False):
     
     return data_df
 
+# %% FUNCTIONS
 def check_empty_cells(df):
     '''
     count empty cells in exprs data,
@@ -164,10 +163,9 @@ def process_exprs_data(self, non_exprs_idxs, id_col = 0, method = "log"):
 
 #### PREPROCESS
 # %% MAIN - INTERACTIVE
-non_exprs_idxs = [0,1] ## indexes for columns other than exprssion data i.e. gene info, etc.
-data_df        = data_reader(DATA_FL)
-data_trfd      = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method = 'log')
-
+# non_exprs_idxs = [0,1] ## indexes for columns other than exprssion data i.e. gene info, etc.
+# data_df        = data_reader(DATA_FL)
+# data_trfd      = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method = 'log')
 
 # %% DEV
 # exprs = df_main_tpm_imp.iloc[:,2:]
