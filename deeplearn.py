@@ -43,7 +43,6 @@ def loss_acc_plots(history):
 
     plt.show()
 
-
 # %% GET DATA
 data_dct = prep_trainset(DATA_PKL)
 data_dct.keys()
@@ -77,7 +76,7 @@ def simple_cnn():
     b2 = layers.MaxPool2D((2,2), name = "pool_b2")
 
     l1 = layers.Flatten(name = "flat")
-    l2 = layers.Dropout(0.3, name = "drop")
+    l2 = layers.Dropout(0.5, name = "drop")
 
     l3 = layers.Dense(24, activation=activations.swish)
     l4 = layers.Dense(12, activation=activations.swish)
@@ -106,10 +105,10 @@ model.compile(optimizer ='rmsprop',
 # %% Fit
 history = model.fit(x = d_trn,
                     y = l_trn,
-                    epochs = 5,
+                    epochs = 8,
                     validation_split = 0.1,
                     validation_steps = 10,
-                    class_weight = {0 : 0.7 , 1 : 1.2})
+                    class_weight = {0 : 0.7 , 1 : 1.3})
 
 
 
@@ -135,4 +134,6 @@ print(f"Precision:{pr} | Recall:{rc} | FB:{fb} | Support:{support}")
 
 
 # %% TO DO
-## Pr, Rc for pos class?? WHat's happenning?
+## Pr, Rc for pos class?? What's happenning?
+## Try simple FNN?
+## Update the normalization scheme - centered towards mean?
