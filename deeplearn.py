@@ -137,3 +137,4 @@ print(f"Precision:{pr} | Recall:{rc} | FB:{fb} | Support:{support}")
 ## Pr, Rc for pos class?? What's happenning?
 ## Try simple FNN?
 ## Update the normalization scheme - centered towards mean?
+## Add more data (i.e. scRNA data, human (other models) data, etc.)
