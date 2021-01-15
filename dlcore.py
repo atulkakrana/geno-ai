@@ -142,6 +142,8 @@ def encode_labels(data_dct):
     '''
     Takes main dict of data and labels,
     and encodes labels for ML/DL
+
+    https://www.analyticsvidhya.com/blog/2020/03/one-hot-encoding-vs-label-encoding-using-scikit-learn/
     '''
 
     ## imports
