@@ -132,9 +132,13 @@ def process_exprs_data(self, non_exprs_idxs, id_col = 0, method = "log"):
     emp_bool   = check_empty_cells(self)
 
     ## extract exprs data
-    exprs      = self.drop(self.columns[non_exprs_idxs], axis=1)
+    # print(f"exprs:{self.shape}")
+    exprs      = self.drop(['empty_cells'], axis = 1)
+    exprs      = exprs.drop(exprs.columns[non_exprs_idxs], axis=1)
     exprs_trfd = transform_exprs(exprs, method = method)
     # exprs_array= exprs_trfd.to_numpy()
+    print(f"exprs:{exprs.shape} | trfd:{exprs_trfd.shape}")
+    # print(f"colnames:{exprs.columns}")
 
     ## plot exprs data
     fig = exprs_trfd.plot.box(figsize=(20,8), rot = 90).get_figure()
@@ -168,7 +172,7 @@ def process_exprs_data(self, non_exprs_idxs, id_col = 0, method = "log"):
 # %% MAIN - INTERACTIVE
 # non_exprs_idxs = [0,1] ## indexes for columns other than exprssion data i.e. gene info, etc.
 # data_df        = data_reader(DATA_FL)
-# data_trfd      = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method = 'log')
+data_trfd      = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method = 'log')
 
 # %% DEV
 # exprs = df_main_tpm_imp.iloc[:,2:]
@@ -204,6 +208,7 @@ if __name__ == "__main__":
 
 ## v02 [01/15/2021]
 ## reverted output to tpm counts and not transformed data
+## removed empty_cells columns after checing for empty cols in 'process_exprs_data'
 
 
 
