@@ -8,7 +8,6 @@
 # %% IMPORTS
 from dlcore import *
 
-
 # %% INPUTS
 DATA_PKL = "train_data.p"
 
@@ -16,7 +15,8 @@ DATA_PKL = "train_data.p"
 def prep_trainset(DATA_PKL):
     '''
     DATA_PKL: holds different data, and labels
-    as equal length arrays and lists.
+    as equal length arrays and lists. Generated
+    by 'dlcore.py'
 
     Generates training/test set for ML/DL;
     takes output of DLCORE.

@@ -233,19 +233,18 @@ def prepare_data_n_labels(dpkl, lpkl, mode='binary'):
     print(f"Pred dct:{len(pdata)}")
     return tdata_dct, pdata_dct
 
-
 # %% MAIN - INTERACTIVE
 # species      = "mouse"
 # labs_dct_pkl = "labs_bin_dct.p"
 # labs_dct, unmap_lst = update_labs_to_ensembl(labs_dct_pkl, species)
 
-# LAB_PKL      = "labs_bin_dct_ensembl.p" ## could be binary labels, multi-label or multi-class
-# DATA_PKL     = "data_imp_trfd_dct.p"
-# labs_pkl     = gen_data_labels(DATA_PKL, LAB_PKL)
+LAB_PKL      = "labs_bin_dct_ensembl.p" ## could be binary labels, multi-label or multi-class
+DATA_PKL     = "data_imp_dct.p"
+labs_pkl     = gen_data_labels(DATA_PKL, LAB_PKL)
 
-# LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-label or multi-class
-# DATA_PKL     = "data_imp_trfd_dct.p"
-# labs_pkl     = prepare_data_n_labels(DATA_PKL, LAB_PKL, mode='binary')
+LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-label or multi-class
+DATA_PKL     = "data_imp_dct.p"
+labs_pkl     = prepare_data_n_labels(DATA_PKL, LAB_PKL, mode='binary')
 
 # %% DEV
 
@@ -261,11 +260,13 @@ def main():
     labs_dct, unmap_lst = update_labs_to_ensembl(labs_dct_pkl, species)
 
     LAB_PKL      = "labs_bin_dct_ensembl.p" ## could be binary labels, multi-label or multi-class
-    DATA_PKL     = "data_imp_trfd_dct.p"
+    # DATA_PKL     = "data_imp_trfd_dct.p"
+    DATA_PKL     = "data_imp_dct.p"
     labs_pkl     = gen_data_labels(DATA_PKL, LAB_PKL)
 
     LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-label or multi-class
-    DATA_PKL     = "data_imp_trfd_dct.p"
+    # DATA_PKL     = "data_imp_trfd_dct.p"
+    DATA_PKL     = "data_imp_dct.p"
     labs_pkl     = prepare_data_n_labels(DATA_PKL, LAB_PKL, mode='binary')
 
     return None

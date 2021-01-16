@@ -4,6 +4,7 @@
 ## note book for genoAI
 
 # %% IMPORTS
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -69,6 +70,11 @@ labs_trf = ohe.fit_transform(labs_enc.reshape(-1,1)).toarray()
 # transform
 data_exp    = z_norm(data_exp)
 
+## sanity check
+if np.isnan(np.min(data_exp)):
+    print("NaNs in data")
+    sys.exit()
+
 # %% PAD
 data_exp_pad = np.pad(data_exp, ((0, 0), (0, 1)), mode='constant')
 print(f"Original shape:{data_exp.shape} | New Shape:{data_exp_pad.shape}")
@@ -90,12 +96,12 @@ def simple_cnn():
 
     l0 = layers.InputLayer((12,8,1), name = "input")
 
-    a1 = layers.Conv2D(16, (2,2), activation=activations.relu, name = "c2d_a1")
-    a2 = layers.Conv2D(16, (2,2), activation=activations.relu, name = "c2d_a2")
+    a1 = layers.Conv2D(16, (2,2), activation=activations.swish, name = "c2d_a1")
+    a2 = layers.Conv2D(16, (2,2), activation=activations.swish, name = "c2d_a2")
     a3 = layers.MaxPool2D((2,2), name = "pool_a3")
     a4 = layers.Dropout(0.25, name = "drop_1")
 
-    b1 = layers.Conv2D(32, (2,2), activation=activations.relu, name = "c2d_b1")
+    b1 = layers.Conv2D(32, (2,2), activation=activations.swish, name = "c2d_b1")
     b2 = layers.MaxPool2D((2,2), name = "pool_b2")
     b3 = layers.Dropout(0.25, name = "drop_2")
 
@@ -152,7 +158,8 @@ tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True, dpi= 64
 
 
 # %% COMPILE
-model.compile(optimizer ='rmsprop',
+opt = optimizers.Adam(learning_rate=0.00000001)
+model.compile(optimizer = opt,
               loss      = losses.categorical_crossentropy,
               metrics   = ['accuracy']) ## metrics.RecallAtPrecision(precision=0.5)
 
@@ -160,6 +167,7 @@ model.compile(optimizer ='rmsprop',
 history = model.fit(x = d_trn,
                     y = l_trn,
                     epochs = 8,
+                    batch_size = 32,
                     validation_split = 0.1,
                     validation_steps = 10,
                     class_weight = {0 : 0.8 , 1 : 1.2})
@@ -196,6 +204,10 @@ print(f"Precision:{pr} | Recall:{rc} | FB:{fb} | Support:{support}")
 
 
 ## NOTES
-## why Loss is NaN - is zscore transformation culrit? Is activation required?
+## 1. why Loss is NaN - is zscore transformation culrit? Is activation required?
+## Normalize original (CPM) data using zscore approach and not log data - take origonal data to pickle
 
-## HOW TO PROCESS LABELS - single, binarize or one-hot encode, and what value, activation and crossnetropy?
+## 2. HOW TO PROCESS LABELS - single, binarize or one-hot encode, and what value, activation and crossnetropy?
+## 3. Primer on Optimizers and activations
+
+

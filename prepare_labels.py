@@ -275,8 +275,8 @@ def process_labs(indct, gene_all_labs_dct, mode = 'binary'):
 # %% MAIN
 def main():
     ## curated labels
-    cur_labs_df    = read_s3_df(LABS_FL, sep = "\t")
-    gene_labs_dct  = gen_dis_labs_dct(cur_labs_df)
+    cur_labs_df         = read_s3_df(LABS_FL, sep = "\t")
+    gene_labs_dct       = gen_dis_labs_dct(cur_labs_df)
 
     ## all labels including 
     ## from the text mining

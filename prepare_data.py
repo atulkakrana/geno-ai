@@ -124,8 +124,9 @@ def process_exprs_data(self, non_exprs_idxs, id_col = 0, method = "log"):
     import pandas as pd 
 
     ## output
-    outtsv = "data_imp_trfd.tsv"
-    outpkl = "%s_dct.p" % outtsv.rpartition(".")[0]
+    outtsv  = "data_imp_trfd.tsv"
+    outpkl1 = "data_imp_dct.p"
+    outpkl2 = "%s_dct.p" % outtsv.rpartition(".")[0]
 
     ## sanity check for missing data
     emp_bool   = check_empty_cells(self)
@@ -150,6 +151,7 @@ def process_exprs_data(self, non_exprs_idxs, id_col = 0, method = "log"):
     ## sanity check
     if len(ids)     == data_arr.shape[0]:
         data_trfd_dct = {k:v for k,v in zip(ids,data_arr)}
+        data_dct      = {k:v for k,v in zip(ids,exprs.values)}
         print(f"Length of IDs:{len(ids)} | Unique IDs:{len(set(ids))} | Len of Dict:{len(data_trfd_dct)}")
     else:
         print("Length of IDs do not match size of expression array")
@@ -157,7 +159,8 @@ def process_exprs_data(self, non_exprs_idxs, id_col = 0, method = "log"):
 
     ## write processed dataframe
     data_trfd.to_csv(outtsv, sep="\t", index=False)
-    pkl.dump(data_trfd_dct, open(outpkl, 'wb'))
+    pkl.dump(data_dct,      open(outpkl1, 'wb'))
+    pkl.dump(data_trfd_dct, open(outpkl2, 'wb'))
 
     return data_trfd
 
@@ -198,6 +201,10 @@ if __name__ == "__main__":
 ## log transform
 ## and write as dataframe and dict 
 ## plot ransformed data
+
+## v02 [01/15/2021]
+## reverted output to tpm counts and not transformed data
+
 
 
 
