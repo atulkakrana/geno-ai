@@ -3,16 +3,29 @@
 ## the deep learning
 ## note book for genoAI
 
+# %% ENVIRONMENT
+import os, datetime
+# %load_ext tensorboard
+# log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+# tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
+# %%
+# %tensorboard --logdir logs/fit
+
 # %% IMPORTS
 import sys
 import numpy as np
 import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
 from scipy import stats
 from traingen import prep_trainset
+from imblearn.under_sampling import CondensedNearestNeighbour, RandomUnderSampler
+
+from sklearn.utils.class_weight import compute_class_weight
 from sklearn.preprocessing import LabelBinarizer, OneHotEncoder
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import precision_recall_fscore_support
+from sklearn.metrics import precision_recall_fscore_support, classification_report, precision_recall_curve
 
 import tensorflow as tf
 from tensorflow.keras import layers, activations, models, metrics
@@ -72,28 +85,67 @@ def log_norm(x_arr):
 
     return y_arr
 
+def balance_train(data, labs, seed = None, balance = True):
+    '''
+    use imbalance-learn to balance the sets
+    https://imbalanced-learn.org/stable/api.html#module-imblearn.under_sampling._prototype_selection
+    '''
+
+    from collections import Counter 
+    from random import randrange
+
+    print(f'Input data:{Counter(labs)}')
+    print(f"Balancing is {str(balance)}")
+
+    if balance == True:
+        ## set a seed
+        if seed is None:
+            seed = randrange(100)
+        else:
+            seed = int(seed)
+        
+        ## resample data
+        # cnn  = CondensedNearestNeighbour(random_state=seed)
+        rus  = RandomUnderSampler(random_state=seed)
+        data_b, labs_b = rus.fit_resample(data, labs)  
+    
+    else:
+        ## just pass as is
+        data_b = np.copy(data)
+        labs_b = np.copy(labs)
+    
+    print(f'Resampled:{Counter(labs_b)}')
+    return data_b, labs_b
+
 # %% GET DATA
 data_dct    = prep_trainset(DATA_PKL); data_dct.keys()
 data_exp    = data_dct['data_exp']
 labs_enc    = data_dct['labels']
 
-# %% PROCESS DATA
-data_norm   = z_norm(data_exp)
-# data_norm   = log_norm(data_exp)
+## balance
+data_exp_b, labs_enc_b = balance_train(data_exp, labs_enc, 
+                                        seed = None, 
+                                        balance = True)
 
-df_exp = pd.DataFrame(data_exp)
-df_norm= pd.DataFrame(data_norm)
-df_norm.describe()
+
+# %% PROCESS DATA
+# data_norm   = log_norm(data_exp)
+data_norm   = z_norm(data_exp_b)
 
 ## sanity check
 if np.isnan(np.min(data_norm)):
     print("NaNs in data")
     sys.exit()
 
+# %% INSPECT DATA
+df_exp = pd.DataFrame(data_exp)
+df_norm= pd.DataFrame(data_norm)
+df_norm.describe()
+
 
 # %% PROCESS LABELS
-labs_trf = lb.fit_transform(labs_enc)
-# labs_trf = ohe.fit_transform(labs_enc.reshape(-1,1)).toarray()
+# labs_trf = lb.fit_transform(labs_enc_b)
+labs_norm = ohe.fit_transform(labs_enc_b.reshape(-1,1)).toarray()
 
 
 # %% PAD
@@ -108,8 +160,12 @@ dexp_3d.shape
 
 
 # %% SPLITS
-dexp = dexp_3d
-d_trn, d_tst, l_trn, l_tst = train_test_split(dexp, labs_trf, test_size=0.1, stratify = labs_trf) 
+dexp = dexp_4d
+d_trn, d_tst, l_trn, l_tst  = train_test_split(dexp, labs_norm, test_size=0.1, stratify = labs_norm) 
+class_wts                   = compute_class_weight('balanced', 
+                                                    np.unique(np.argmax(l_trn,axis =1)), 
+                                                    np.argmax(l_trn,axis =1))
+clss_wts_dct                = dict(enumerate(class_wts, 0))
 
 # %% MODELS
 def simple_cnn(data,labs):
@@ -117,25 +173,40 @@ def simple_cnn(data,labs):
     Simple (seqeunntial) NN for testing
     '''
 
-    l0 = layers.InputLayer((12,8,1), name = "input")
+    ## shapes
+    di,dj,dk,dl = data.shape
+    li,lj       = labs.shape
+    print(f"Data Shape:  {data.shape}")
+    print(f"Labels Shape:{labs.shape}")
+
+    ## binary or multi-class
+    if lj > 1:
+        ## multi-class
+        last_act = activations.softmax
+    else:
+        ## binary
+        last_act = activations.sigmoid
+
+    ## layers and model
+    l0 = layers.InputLayer((dj,dk,dl), name = "input")
 
     a1 = layers.Conv2D(16, (2,2), activation=activations.swish, name = "c2d_a1")
     a2 = layers.Conv2D(16, (2,2), activation=activations.swish, name = "c2d_a2")
     a3 = layers.MaxPool2D((2,2), name = "pool_a3")
-    a4 = layers.Dropout(0.25, name = "drop_1")
+    a4 = layers.Dropout(0.10, name = "drop_1")
 
     b1 = layers.Conv2D(32, (2,2), activation=activations.swish, name = "c2d_b1")
     b2 = layers.MaxPool2D((2,2), name = "pool_b2")
-    b3 = layers.Dropout(0.25, name = "drop_2")
+    b3 = layers.Dropout(0.10, name = "drop_2")
 
     l1 = layers.Flatten(name = "flat")
-    # l2 = layers.Dropout(0.20, name = "drop_3")
+    l2 = layers.Dropout(0.10, name = "drop_3")
 
     l3 = layers.Dense(32, activation=activations.swish)
     l4 = layers.Dense(16, activation=activations.swish)
-    lf = layers.Dense(1,  activation=activations.sigmoid)
+    lf = layers.Dense(lj,  activation=last_act)
 
-    model = models.Sequential([l0, a1, a2, a3, a4, b1, b2, b3, l1, l3, l4, lf])
+    model = models.Sequential([l0, a1, a2, a3, a4, b1, b2, b3, l1, l2, l3, l4, lf])
 
     return model
 
@@ -152,9 +223,9 @@ def simple_1D_cnn(data, labs):
 
     ## decisions
     if l2 > 1:
-        last_act = activation=activations.softmax
+        last_act = activations.softmax
     else:
-        last_act = activation=activations.sigmoid
+        last_act = activations.sigmoid
 
 
     # input = layers.InputLayer(input_shape = (95,1), name ="input") ## this didn't work
@@ -180,8 +251,8 @@ def simple_1D_cnn(data, labs):
 
 # %% SUMMARY
 ## summary
-# model = simple_cnn(d_trn, l_trn)
-model = simple_1D_cnn(d_trn, l_trn)
+model = simple_cnn(d_trn, l_trn)
+# model = simple_1D_cnn(d_trn, l_trn)
 model.summary()
 
 ## plot
@@ -190,19 +261,20 @@ tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True, dpi= 64
 
 
 # %% COMPILE
-opt = optimizers.Adam(learning_rate=0.00000001)
+opt = optimizers.Adam(learning_rate=0.0000000001)
 model.compile(optimizer = opt,
               loss      = losses.categorical_crossentropy,
-              metrics   = ['accuracy']) ## metrics.RecallAtPrecision(precision=0.5)
+              metrics   = ['accuracy']) ## metrics.RecallAtPrecision(precision=0.5);PrecisionAtRecall(recall=0.5)
 
 # %% Fit
+class_weights = compute_class_weight('balanced', np.unique(labs_enc), labs_enc)
 history = model.fit(x = d_trn,
                     y = l_trn,
                     epochs = 8,
                     batch_size = 32,
                     validation_split = 0.1,
-                    validation_steps = 10,
-                    class_weight = {0 : 0.8 , 1 : 1.2})
+                    validation_steps = 5,
+                    class_weight     = clss_wts_dct) ## callbacks=[tensorboard_callback]
 
 # %% PLOTS
 loss_acc_plots(history)
@@ -221,16 +293,33 @@ if l_tst.shape[1] == 1:
     tst_clas = (tst_prob < 0.5).astype(np.int)
 else:
     tst_clas = np.argmax(tst_prob, axis=1) 
-    # tst_clas_oh = ohe.transform(tst_clas.reshape(-1,1)).toarray()
+    tst_clas = ohe.transform(tst_clas.reshape(-1,1)).toarray()
 
 
 # %% PERFORMANCE METRICS
-pr, rc, fb, support = precision_recall_fscore_support(l_tst, tst_clas)
-print(f"Precision:{pr} | Recall:{rc} | FB:{fb} | Support:{support}")
+print(classification_report(l_tst, tst_clas, labels=[0,1]))
 
-# pr, rc, fb, support = precision_recall_fscore_support(l_tst, tst_clas, average = 'binary', pos_label = 1)
-# print(f"Precision:{pr} | Recall:{rc} | FB:{fb} | Support:{support}")
+# pr, rc, fb, support = precision_recall_fscore_support(l_tst, tst_clas, average = 'micro')
+# print(f"\nMicro Precision:{round(pr,3)} | Recall:{round(rc,3)} | FB:{round(fb,3)}")
 
+
+
+# %% PLOTS
+def pr_plot(cl_vec, prob_vec):
+    '''
+    inputs: 
+    (a) one hot encoded class vectors form predictions
+    (b) probabilitiy vectors from predictions 
+    '''
+    l = np.argmax(cl_vec, axis=1) ##  one hot (predicted) class vector
+    p = np.max(prob_vec, axis=1)    ##  probabilities for each class
+    precision, recall, thresholds = precision_recall_curve(l, p)
+    plt = sns.lineplot(x=recall, y=precision, ci= 'sd')
+    plt.set(xlabel="Recall", ylabel = "Precision")
+
+    return None
+
+pr_plot(tst_clas, tst_prob)
 
 # %% CHANGELOG
 ## v01
