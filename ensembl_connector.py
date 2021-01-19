@@ -121,3 +121,4 @@ for qid in qids:
 
 # %% TO DO
 ## Check is negative strand is reversed and excised or we need to compute coords from left hand
+## see: https://www.biostars.org/p/182727/
