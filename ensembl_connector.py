@@ -5,7 +5,6 @@
 import requests, json
 import sys
 
-
 # %% ENSEMBL API
 scheme      = 'https'
 host        = 'rest.ensembl.org'
@@ -80,7 +79,7 @@ def extract_seq(info, ENSE_API, endpoint = 'region'):
     end     = info.get('end')
     strand  = info.get('strand')
 
-    if None in [species, chr, start, end. strand]:
+    if None in [species, chr, start, end, strand]:
         print(f"Info:{info}")
         print(f" There is a '`None` in required info")
         sys.exit()

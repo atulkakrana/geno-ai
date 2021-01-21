@@ -4,21 +4,18 @@
 library("biomaRt")
 library("GenomicRanges")
 
-
-### USER SETTINGS ########
-
-
-
 #### EXPLORE BIOMART #####
 ## databases
 marts = listMarts() ## see different marts
 marts[:10,]
 
 ## datasets
+ensembl  = useMart("ensembl")
 datasets = listDatasets(ensembl)
 datasets[1:150,]
 
 ## filters
+ensembl  = useMart("ensembl", "mmusculus_gene_ensembl")
 filters = listFilters(ensembl)
 filters[1:100,1]
 
@@ -27,14 +24,13 @@ attributes = listAttributes(ensembl)
 attributes[1:100,1]
 
 #### SELECT DATA #########
-mart    = "ensembl"
 dataset = "mmusculus_gene_ensembl" ## from datasets list above; grc38.p6
-ensembl = useDataset(mart=ensembl, dataset=dataset)
+ensembl = useMart(mart="ensembl", dataset=dataset)
 
 #### GENERATE QUERY
 qids    = c('ENSMUSG00000000001','ENSMUSG00000000028') ## test ensembl ids
-attrbs  = c('ensembl_gene_id', 'hgnc_symbol', 'external_gene_name',
-            'chromosome_name','5_utr_start','strand', 'source')
+attrbs  = c('ensembl_gene_id', 'external_gene_name',
+            'chromosome_name','5_utr_start', '5_utr_end','strand')
 filts   = c('ensembl_gene_id')
 
 annots  = getBM(attributes  = attrbs, 

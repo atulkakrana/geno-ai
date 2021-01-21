@@ -9,14 +9,12 @@ import requests
 
 
 # %% FUNCTIONS
-def gen_query_url(endpoint):
+def gen_query_url(endpoint ='lookup/symbol'):
     '''
     generates endpoint for symbol lookup
     '''
     scheme      = 'http'
     host        = 'rest.ensembl.org'
-    port        = '80'
-    # endpoint    = 'lookup/symbol'
     url         = '{}://{}/{}'.format(scheme, host, endpoint)
 
     return url 
