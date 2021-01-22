@@ -1,5 +1,6 @@
 ## code and functions for 
 ## calling Ensembl APIs
+## see approach: https://www.biostars.org/p/182727/
 
 
 # %% ENVIRONMENT
@@ -18,7 +19,7 @@ from subprocess import PIPE
 # %% SETTINGS
 UCSC_GENE_TABLE = f"{HOME}/0.work/genomes/hgTables_gene.txt"
 CHR_LENGTHS     = f"{HOME}/0.work/genomes/grcm38.txt"
-ASSEMBLY        = f"{HOME}/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.fa"
+ASSEMBLY        = f"{HOME}/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.mod.fa"
 
 ## HELPERS
 def add_flanks(gene_table, chr_lengths, flank = 500):
@@ -121,20 +122,22 @@ def extract_seqs(gene_table, assembly):
 
     ## inputs
     inpfile = "%s_flanked_uniq.bed" % (gene_table.rpartition(".")[0])
+    print(f"Coords file:{inpfile}")
 
     ## Use bedtools to 
     ## extract seqeunces
-    opts    = ['bedtools','getfasta', '-fi', assembly, '-bed', inpfile, '-fo', outfile]
+    ## '-s' switch to use strand
+    ## informarion and reverse
+    ## complement for negative strand
+    opts    = ['bedtools','getfasta', '-fi', assembly, '-bed', inpfile, '-fo', outfile, '-s', '-name']
     print("%s" % (" ".join(str(i) for i in opts)))
     res = subprocess.run(opts, stdout=PIPE, stderr=PIPE, universal_newlines=True)
 
     ## check output and write results
     if res.returncode == 0:
-        print("Process finished")
+        # print("Process finished")
+        print(f"Errors (if any):{res.stderr}")
         print(f"see outfile:{outfile}")
-        fhout = open(outfile, 'w')
-        fhout.write("%s" % (res.stdout))
-        fhout.close()
         pass
     else:
         print("Something went wrong with bedtools flanks generator")
@@ -190,3 +193,16 @@ def main():
 if __name__ == "__main__":
     main()
     pass
+
+
+# %% CHANGELOG
+## added '-s' parameter to getfasta command to reverse complement negative starnd coords (tested okay)
+## added '-name' to getfasta coomand to include gene name
+
+# %% NOTES
+## Promotors can also be downloaded manually from UCSC table browser
+##  choose genome {Mouse} assembly {GRCm38/mm10}, default track {GENCODE VM23},
+##  table {knownGene}, output format {seqeunce}, and click on download
+##  On next page, select {genomic} then choose promotors (untick all other seq types)
+##  Note: for reverse stand, the UCSC automatically reverse complements the promoter seqeunce
+##  which is the right thing to do.
