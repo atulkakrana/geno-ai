@@ -1,0 +1,10 @@
+user:
+    species      = "mouse"
+    labs_dct_pkl = "labs_bin_dct.p"
+    LAB_PKL      = "labs_bin_dct_ensembl.p" ## could be binary labels, multi-label or multi-class
+    # DATA_PKL     = "data_imp_trfd_dct.p"
+    DATA_PKL     = "data_imp_dct.p"
+    LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-label or multi-class
+    # DATA_PKL     = "data_imp_trfd_dct.p"
+    DATA_PKL     = "data_imp_dct.p"
+    DNA_PKL      = "dna_feats.pkl"
