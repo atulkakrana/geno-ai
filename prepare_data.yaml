@@ -5,6 +5,9 @@ user:
   data_file: "s3://lachke-lab-data/work/0.geno-ai/data/rna-seq/E-MTAB-6798/E-MTAB-6798-query-results.tpms.impute.tsv"
   labs_file: "s3://lachke-lab-data/work/0.geno-ai/data/disgenet/curated_gene_disease_associations.tsv"
   attr_file: "s3://lachke-lab-data/work/0.geno-ai/data/disgenet/disease_mappings_to_attributes.tsv"
+  genes_bed: "/home/atul/0.work/0.geno_ai/biomart-ensembl-anno.bed"
+  chr_sizes: "/home/atul/0.work/genomes/Mus_musculus.summ.txt"
+  genome_fl: "/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.mod.fa"
 
 dev:
   class_type: 'binary' ## Options: binary | multi

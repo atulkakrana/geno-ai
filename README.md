@@ -15,7 +15,7 @@ It may also be useful to use datsets from different models to account for inter-
 1. https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6658352/ [Bulk RNA-seq 7 tissues multiple stages]
     * E-MTAB-6769 (chicken), 
     * E-MTAB-6782 (rabbit)
-    * E-MTAB-6798 (mouse)
+    * E-MTAB-6798 (mouse, annotated with Ensembl 71)
     * E-MTAB-6811 (rat)
     * E-MTAB-6813 (rhesus)
     * E-MTAB-6814 (human)

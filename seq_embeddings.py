@@ -126,20 +126,23 @@ def train_word_vec_model(feature_file):
 # %% MAIN
 # out_fasta       = process_genome_data(DATA_DIR, DATA_FLS)
 # test_file       = "/home/atul/0.work/genomes/all_features_seq.fa"
-test_file       = "/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext.fa"
-wordvec_model   = train_word_vec_model(test_file)
+# test_file       = "/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext.fa"
+# wordvec_model   = train_word_vec_model(test_file)
 
 # %% DEV
-
+# model = fasttext.load_model("/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext_01_23_13_11.bin")
 
 # %% TEST
-# model = fasttext.train_unsupervised('embeddings/data/fil9', "cbow")
-# # %%
-# model.get_nearest_neighbors('dragon')
+# vect = model.get_word_vector('ATGCGC')
+# model.get_nearest_neighbors('TTGCGC')
+# vect.shape
 
 # %% MAIN
 def main():
-    out_fasta = process_genome_data(DATA_DIR, DATA_FLS)
+    out_fasta       = process_genome_data(DATA_DIR, DATA_FLS)
+    test_file       = "/home/atul/0.work/genomes/all_features_seq.fa"
+    test_file       = "/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext.fa"
+    wordvec_model   = train_word_vec_model(test_file)
 
     return None
 

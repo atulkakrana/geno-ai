@@ -159,8 +159,21 @@ def encode_labels(data_dct):
 
     return labels_enc
 
+def gen_seq_embeddings(fasdct):
+    '''
+    single-level fas dct for a feature set (i.e. gene, promoter, etc)
+    key is genename and value is seqeunce
+
+    return a dict where seqeunce 
+    key is genename and value is embedding
+    '''
+
+
+
+    return embed_dct
+
 # %% FUNCTIONS
-def prepare_data_n_labels(dpkl, lpkl, mode='binary'):
+def prepare_data_n_labels(dpkl, lpkl, spkl, mode='binary'):
     '''
     Process labels for ML/DL
     classifier method i.e. binary, multi-class (mclass),

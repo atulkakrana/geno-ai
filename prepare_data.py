@@ -10,15 +10,21 @@ FS = s3fs.S3FileSystem(anon=False, profile_name="dips")
 import rpy2.robjects as ro
 import numpy as np
 import yaml
+import pickle
 import seaborn as sns
+import matplotlib.pyplot as plt
 from rpy2.robjects import pandas2ri
+from seq_embeddings import fasta_reader
 from rpy2.robjects.packages import importr
 from rpy2.robjects.conversion import localconverter
-import matplotlib.pyplot as plt
+from fetchPromoters import add_flanks, filter_flanked, extract_seqs, clean_bed, gene_level_bed
 
-## USER SETTINGS
-config  = yaml.load(open('prepare_data.yaml', 'r'), Loader=yaml.FullLoader)
-DATA_FL = config['user']['data_file']
+#%% USER SETTINGS
+config          = yaml.load(open('prepare_data.yaml', 'r'), Loader=yaml.FullLoader)
+DATA_FL         = config['user']['data_file']
+GENE_BED_FL     = config['user']['genes_bed']
+CHR_SIZE_FL     = config['user']['chr_sizes']
+GENOME_ASSM     = config['user']['genome_fl']
 
 # %% HELPERS
 def df_py_to_r(df_py):
@@ -152,6 +158,7 @@ def process_exprs_data(self, non_exprs_idxs, id_col = 0, method = "log"):
     ## generate dictionary of expression
     ids             = list(data_trfd.iloc[:, id_col])
     data_arr        = exprs_trfd.values
+    
     ## sanity check
     if len(ids)     == data_arr.shape[0]:
         data_trfd_dct = {k:v for k,v in zip(ids,data_arr)}
@@ -168,17 +175,100 @@ def process_exprs_data(self, non_exprs_idxs, id_col = 0, method = "log"):
 
     return data_trfd
 
+def fetch_promoters(genes_bed, chr_sizes, genome_fl, flank = 500):
+    '''
+    fetch promoter fasta file from given 
+    genes bed files and output a dct of 
+    cleaned upnames as keys and seqs as values
+
+    for featured bed files see fetchPromoters.R (promoters from biomart);
+    please note that bed files from UCSC table browser diidn't include
+    a large number of genes in our expression data (from Ensembl 71, 2013)
+    '''
+    
+    flanked_bed      = add_flanks(genes_bed, chr_sizes, flank)       ## extend coordinates to include flanks
+    df, flanked_dct  = filter_flanked(flanked_bed, genes_bed)        ## select correct flanked coords based on + and - strand
+    outfasta         = extract_seqs(genes_bed, genome_fl)            ## extracts flanked coords seq in correct orientation
+
+    print(f"Flanked seqeunces are written to:{outfasta}")
+    return outfasta
+
+def read_seq_features(fas_fl_lst, feat_lst):
+    '''
+    this function reads seqeunces for features;
+    each feature is provided in seprate file such 
+    5'UTR, 3'UTR, etc. and a corresponding feature
+    names (i.e. gene, promotoe, UTR, etc)
+
+    OUTPUT: dict of dicts i.e. (dict of promoter seqeunces, dict of gene seqeunces, etc.)
+    '''
+    print(f"\nFn: Read and process FASTA feature files")
+
+    ## output
+    fasdct = {}
+    outpkl = "dna_feats.pkl"
+
+    ## sanity check
+    if len(fas_fl_lst) == len(feat_lst):
+        pass
+    else:
+        print(f"fasta files:{len(fas_fl_lst)} | feats labels:{len(feat_lst)}")
+        print(f"the input list lengths should be same - exiting")
+        sys.exit()
+
+    for fl, feat in zip (fas_fl_lst, feat_lst):
+        ## read and cleans
+        ## fasta keys i.e.
+        ## normalize to map with 
+        ## expression data
+        tmp_dct = {}
+        fasta   = fasta_reader(fl)
+        for head,seq in fasta.items():
+            k = head.split(".",1)[0].replace("ENSMUST","ENSMUSG") 
+            tmp_dct[k] = seq
+        ## add feat sequences dct 
+        ## to main dct
+        fasdct[feat] = tmp_dct
+    
+    pickle.dump(fasdct, open(outpkl, "wb" ) )
+    return fasdct
+
 #### PREPROCESS
 # %% MAIN - INTERACTIVE
-# non_exprs_idxs = [0,1] ## indexes for columns other than exprssion data i.e. gene info, etc.
-# data_df        = data_reader(DATA_FL)
-data_trfd      = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method = 'log')
+# ## expression data
+# non_exprs_idxs  = [0,1] ## indexes for columns other than exprssion data i.e. gene info, etc.
+# data_df         = data_reader(DATA_FL)
+# data_trfd       = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method = 'log')
+
+# ## sequence data
+# bed         = clean_bed(GENE_BED_FL, remove_scaffolds=True)
+# bed_uniq    = gene_level_bed(bed, feat = 'promoter')
+# prom_fasta  = fetch_promoters(bed_uniq, CHR_SIZE_FL, GENOME_ASSM, flank = 500)
+# fasta_lst   = [prom_fasta, ]
+# feats_lst   = ['promoter', ]
+# fasdct      = read_seq_features(fasta_lst, feats_lst)
 
 # %% DEV
-# exprs = df_main_tpm_imp.iloc[:,2:]
-# exclude_cols = [0,1]
-# exprs    = df_main_tpm_imp.drop(df_main_tpm_imp.columns[exclude_cols], axis =1)
-# exprs_tf = exprs.add(0.00001).apply(np.log10)
+
+
+# %%
+# ense_ids    = set(data_trfd['Gene.ID'])
+# fasdf       = pd.DataFrame(fasdct['promoter'].keys())
+# biomart_df  = pd.read_csv('biomart_anno_5_utr.tsv', sep = "\t")
+
+# %% 
+# fas_heads   = set(fasdct['promoter'].keys())
+# biomart_ids = set(biomart_df['ensembl_gene_id'])
+# lst = []
+# for i in ense_ids:
+#     if i not in biomart_ids:
+#         lst.append(i)
+
+# %%
+# df1 = pd.DataFrame(data_trfd['Gene.ID'])
+# biomart_join_df = biomart_df.merge(df1, how= 'outer', left_on = 'ensembl_gene_id', 
+#                                     right_on = 'Gene.ID', indicator = True, suffixes = ["_bm", "_exprs"])
+# biomart_join_df.to_csv('biomart_merged_exprs.tsv', sep = "\t")
 
 # %% TEST
 # fig = exprs_tf.plot.box(figsize=(20,8), rot = 90).get_figure()
@@ -186,9 +276,19 @@ data_trfd      = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method 
 
 # %% MAIN 
 def main():
+    ## expression data
     non_exprs_idxs = [0,1] ## indexes for columns other than exprssion data i.e. gene info, etc.
     data_df        = data_reader(DATA_FL)
     data_trfd      = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method = 'log')
+
+    ## seq data 
+    ## read, clean and extract bed
+    bed         = clean_bed(GENE_BED_FL, remove_scaffolds=True)
+    bed_uniq    = gene_level_bed(bed, feat = 'promoter')
+    prom_fasta  = fetch_promoters(bed_uniq, CHR_SIZE_FL, GENOME_ASSM, flank = 500)
+    fasta_lst   = [prom_fasta, ]
+    feats_lst   = ['promoter', ]
+    fasdct      = read_seq_features(fasta_lst, feats_lst)
 
     return None
 
