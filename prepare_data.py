@@ -224,7 +224,8 @@ def read_seq_features(fas_fl_lst, feat_lst):
         tmp_dct = {}
         fasta   = fasta_reader(fl)
         for head,seq in fasta.items():
-            k = head.split(".",1)[0].replace("ENSMUST","ENSMUSG") 
+            k = head.split(".",1)[0].replace("ENSMUST","ENSMUSG") ## incase seq extraction used UCSC table browswer which returns transcript ids
+            k = k.split(":",1)[0] ## extract name from bedtools generated fasta header (ENSMUSG00000118555::chr7:111119594-111120094(-))
             tmp_dct[k] = seq
         ## add feat sequences dct 
         ## to main dct
@@ -240,13 +241,13 @@ def read_seq_features(fas_fl_lst, feat_lst):
 # data_df         = data_reader(DATA_FL)
 # data_trfd       = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method = 'log')
 
-# ## sequence data
-# bed         = clean_bed(GENE_BED_FL, remove_scaffolds=True)
-# bed_uniq    = gene_level_bed(bed, feat = 'promoter')
-# prom_fasta  = fetch_promoters(bed_uniq, CHR_SIZE_FL, GENOME_ASSM, flank = 500)
-# fasta_lst   = [prom_fasta, ]
-# feats_lst   = ['promoter', ]
-# fasdct      = read_seq_features(fasta_lst, feats_lst)
+## sequence data
+bed         = clean_bed(GENE_BED_FL, remove_scaffolds=True)
+bed_uniq    = gene_level_bed(bed, feat = 'promoter')
+prom_fasta  = fetch_promoters(bed_uniq, CHR_SIZE_FL, GENOME_ASSM, flank = 500)
+fasta_lst   = [prom_fasta, ]
+feats_lst   = ['promoter', ]
+fasdct      = read_seq_features(fasta_lst, feats_lst)
 
 # %% DEV
 
@@ -309,6 +310,10 @@ if __name__ == "__main__":
 ## v02 [01/15/2021]
 ## reverted output to tpm counts and not transformed data
 ## removed empty_cells columns after checing for empty cols in 'process_exprs_data'
+
+## v03 [01/24/2021]
+## added functions to fetch promoter seqeunces guven bedfiles
+## and write the dictionary for seqeunce based features (most of the functions moved to fetchpromoters.py)
 
 
 

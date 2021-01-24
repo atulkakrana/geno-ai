@@ -25,11 +25,11 @@ def prep_trainset(DATA_PKL):
     data_dct    = pickle.load( open( DATA_PKL, "rb" ) )
     labs_enc    = encode_labels(data_dct)
     data_exp    = data_dct['exp_data']
-
-
+    data_pro    = data_dct['pro_data']
 
     ## off for deep learning
     payload     = { 'data_exp':data_exp, 
+                    'data_pro':data_pro,
                     'labels':labs_enc
                     }
     return payload
