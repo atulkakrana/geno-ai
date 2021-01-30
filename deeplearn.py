@@ -25,7 +25,7 @@ from imblearn.under_sampling import CondensedNearestNeighbour, RandomUnderSample
 
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.preprocessing import LabelBinarizer, OneHotEncoder
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedShuffleSplit
 from sklearn.metrics import precision_recall_fscore_support, classification_report, precision_recall_curve
 
 import tensorflow as tf
@@ -251,6 +251,26 @@ def label_transform(labs_enc_b, method = 'ohe'):
 
     return labs_norm
 
+def shuffled_splits(dexp, dpro, labs_norm, n_splits = 5, test_prop = 0.1, seed = 0):
+    '''
+    Generate multiple shuffled splits;
+    prepare datasets for each split and
+    return a list of lists for data
+    '''
+    from random import randrange
+
+    ## generate seed
+    if seed is None:
+        seed = randrange(100)
+    else:
+        seed = int(seed)
+
+    ## shuffled splits
+    splt_idxs   = np.arange(labs_norm.shape[0])
+    sss = StratifiedShuffleSplit(n_splits=n_splits, test_size=test_prop, random_state=0)
+    sss.get_n_splits(splt_idxs, labs_norm)
+
+    return sss, splt_idxs
 
 # %% PREP DATA ##############
 #############################
@@ -376,37 +396,60 @@ def simple_1D_cnn(data, labs):
 
     return model
 
-# %% SUMMARY
-# model = simple_1D_cnn(d_exp_trn, l_trn)
-model = simple_2d_cnn(d_exp_trn, l_trn)
-model.summary()
+def fit_iterator(dexp, dpro, labs_norm,  model):
+    '''
+    recieves lst of datasets from a split and 
+    fits the model to each set and generates
+    classification report
+    '''
 
-dot_img_file = '/tmp/model_1.png'
-tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True, dpi= 64)
+    ## outputs
+    hist_lst = []
+    perf_lst = []
 
-# %% FIT
-history = model.fit(x = d_exp_trn,
-                    y = l_trn,
-                    epochs = 8,
-                    batch_size = 32,
-                    validation_split = 0.1,
-                    validation_steps = 5,
-                    class_weight     = class_wgts_dct) ## callbacks=[tensorboard_callback]
+    ## Generate splits
+    sss, splt_idxs = shuffled_splits(dexp, dpro, labs_norm, seed = None)
+
+    for trn_idx, tst_idx in sss.split(splt_idxs, labs_norm):
+        print(f"Trn Idxs:{trn_idx[:10]} ...")
+        print(f"Tst Idxs:{tst_idx[:10]} ...")
+        d_exp_trn = dexp[trn_idx]
+        d_pro_trn = dpro[trn_idx]
+
+        d_exp_tst = dexp[tst_idx]
+        d_pro_tst = dpro[tst_idx]
+
+        l_trn = labs_norm[trn_idx]
+        l_tst = labs_norm[tst_idx]
+
+        class_wgts_dct = gen_class_wgts(l_trn)
+
+        ## train model
+        history = model_fit(d_exp_trn, l_trn, class_wgts_dct)
+        hist_lst.append(history)
+        
+        ## generate performance 
+        classes, probs, report = evaluate(d_exp_tst, l_tst)
+        perf_lst.append(report)
 
 
+    return hist_lst, perf_lst
 
+def model_fit(d_trn, l_trn, class_wgts_dct, epochs = 8, batch_size = 32,
+                    validation_split = 0.1, validation_steps = 5,):
+    '''
+    Trains model
+    '''
+    history = model.fit(x = d_exp_trn,
+                        y = l_trn,
+                        epochs = epochs,
+                        batch_size = batch_size,
+                        validation_split = validation_split,
+                        validation_steps = validation_steps,
+                        class_weight     = class_wgts_dct) ## callbacks=[tensorboard_callback]
 
-# %% PERFORMANCE ############
-#############################
-# %% BASIC PLOT
-loss_acc_plots(history)
+    return history
 
-# %% BASIC EVAL
-_, trn_acc = model.evaluate(d_exp_trn, l_trn, verbose=0)
-_, tst_acc = model.evaluate(d_exp_tst, l_tst, verbose=0)
-print(f"Train acc:{trn_acc} | Test acc:{tst_acc}")
-
-# %% EVALUATE
 def evaluate(d_exp_tst, l_tst):
     '''
     Evaluation of model on test data
@@ -424,9 +467,33 @@ def evaluate(d_exp_tst, l_tst):
         tst_class = ohe.transform(tst_class.reshape(-1,1)).toarray()
 
     ## Get Performance For All Labels
-    print(classification_report(l_tst, tst_class, labels=[0,1]))
+    classifer_report = classification_report(l_tst, tst_class, labels=[0,1])
+    print(classifer_report)
 
-    return tst_class, tst_probs
+    return tst_class, tst_probs, classifer_report
+
+# %% SUMMARY
+# model = simple_1D_cnn(d_exp_trn, l_trn)
+model = simple_2d_cnn(d_exp_trn, l_trn)
+model.summary()
+
+dot_img_file = '/tmp/model_1.png'
+tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True, dpi= 64)
+
+# %% FIT
+hist_lst, perf_lst = fit_iterator(dexp, dpro, labs_norm,  model)
+
+
+# %% PERFORMANCE ############
+#############################
+# %% BASIC PLOT
+loss_acc_plots(hist_lst[0])
+
+# %% BASIC EVAL
+_, trn_acc = model.evaluate(d_exp_trn, l_trn, verbose=0)
+_, tst_acc = model.evaluate(d_exp_tst, l_tst, verbose=0)
+print(f"Train acc:{trn_acc} | Test acc:{tst_acc}")
+
 
 # %% PERFORMANCE
 tst_class, tst_probs = evaluate(d_exp_tst, l_tst)
