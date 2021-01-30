@@ -275,12 +275,12 @@ def prepare_data_n_labels(dpkl, lpkl, spkl, mode='binary'):
         sys.exit(1)
 
     ## prepare dicts for ML/DL
-    tdata_dct['exp_data']   = tdata ## data/features and labels should be in same order
-    tdata_dct['pro_data']   = tprom ## data/features and labels should be in same order 
+    tdata_dct['exp_data']   = np.array(tdata) ## data/features and labels should be in same order
+    tdata_dct['pro_data']   = np.array(tprom) ## data/features and labels should be in same order 
     tdata_dct['labels']     = tlabs ## data/features and labels should be in same order 
 
-    pdata_dct['exp_data']   = pdata ## data/features and labels should be in same order
-    pdata_dct['pro_data']   = pprom ## data/features and labels should be in same order 
+    pdata_dct['exp_data']   = np.array(pdata) ## data/features and labels should be in same order
+    pdata_dct['pro_data']   = np.array(pprom) ## data/features and labels should be in same order 
     pdata_dct['labels']     = [None]*len(pdata) ## data/features and labels should be in same order
 
     ## write final train data and labels
@@ -321,9 +321,9 @@ def prepare_data_n_labels(dpkl, lpkl, spkl, mode='binary'):
 
 # %% MAIN
 def main():
-    species      = "mouse"
-    labs_dct_pkl = "labs_bin_dct.p"
-    labs_dct, unmap_lst = update_labs_to_ensembl(labs_dct_pkl, species)
+    # species      = "mouse"
+    # labs_dct_pkl = "labs_bin_dct.p"
+    # labs_dct, unmap_lst = update_labs_to_ensembl(labs_dct_pkl, species)
 
     LAB_PKL      = "labs_bin_dct_ensembl.p" ## could be binary labels, multi-label or multi-class
     # DATA_PKL     = "data_imp_trfd_dct.p"
