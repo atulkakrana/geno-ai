@@ -294,16 +294,13 @@ class_wgts_dct = gen_class_wgts(l_trn)
 #%% MODELS ##################
 #############################
 # %% MODELS
-def simple_2d_cnn(data,labs):
+def loss_n_activations(labs):
     '''
-    Simple (seqeunntial) NN for testing
+    get basic loss and activations based on the model
     '''
-
+    
     ## shapes
-    di,dj,dk,dl = data.shape
     li,lj       = labs.shape
-    print(f"Data Shape:  {data.shape}")
-    print(f"Labels Shape:{labs.shape}")
 
     ## binary or multi-class
     if lj > 1:
@@ -315,40 +312,7 @@ def simple_2d_cnn(data,labs):
         last_act = activations.sigmoid
         loss     = losses.binary_crossentropy
 
-    ## layers and model
-    l0 = layers.InputLayer((dj,dk,dl), name = "input")
-
-    a1 = layers.Conv2D(16, (2,2), activation=activations.swish, name = "c2d_a1")
-    a2 = layers.Conv2D(16, (2,2), activation=activations.swish, name = "c2d_a2")
-    a3 = layers.MaxPool2D((2,2), name = "pool_a3")
-    a4 = layers.Dropout(0.10, name = "drop_1")
-
-    b1 = layers.Conv2D(32, (2,2), activation=activations.swish, name = "c2d_b1")
-    b2 = layers.MaxPool2D((2,2), name = "pool_b2")
-    b3 = layers.Dropout(0.10, name = "drop_2")
-
-    l1 = layers.Flatten(name = "flat")
-    l2 = layers.Dropout(0.10, name = "drop_3")
-
-    l3 = layers.Dense(32, activation=activations.swish)
-    l4 = layers.Dense(16, activation=activations.swish)
-    lf = layers.Dense(lj,  activation=last_act)
-
-    model = models.Sequential([l0, a1, a2, a3, a4, b1, b2, b3, l1, l2, l3, l4, lf])
-
-    ## compile
-    opt = optimizers.Adam(learning_rate=0.0000000001)
-    model.compile(optimizer = opt,
-              loss          = loss,
-              metrics       = ['accuracy']) ## metrics.RecallAtPrecision(precision=0.5);PrecisionAtRecall(recall=0.5)
-
-    return model
-
-def multi_inp_2D_CNN():
-
-
-
-    return None
+    return last_act, loss
 
 def simple_1D_cnn(data, labs):
     '''
@@ -396,7 +360,162 @@ def simple_1D_cnn(data, labs):
 
     return model
 
-def fit_iterator(dexp, dpro, labs_norm,  model):
+def simple_2d_cnn(data,labs):
+    '''
+    Simple (seqeunntial) NN for testing
+    '''
+
+    ## shapes
+    di,dj,dk,dl = data.shape
+    li,lj       = labs.shape
+    print(f"Data Shape:  {data.shape}")
+    print(f"Labels Shape:{labs.shape}")
+
+    ## binary or multi-class
+    if lj > 1:
+        ## multi-class
+        last_act = activations.softmax
+        loss     = losses.categorical_crossentropy
+    else:
+        ## binary
+        last_act = activations.sigmoid
+        loss     = losses.binary_crossentropy
+
+    ## layers and model
+    l0 = layers.InputLayer((dj,dk,dl), name = "input")
+
+    a1 = layers.Conv2D(16, (2,2), activation=activations.swish, name = "c2d_a1")
+    a2 = layers.Conv2D(16, (2,2), activation=activations.swish, name = "c2d_a2")
+    a3 = layers.MaxPool2D((2,2), name = "pool_a3")
+    a4 = layers.Dropout(0.10,    name = "drop_1")
+
+    b1 = layers.Conv2D(32, (2,2), activation=activations.swish, name = "c2d_b1")
+    b2 = layers.MaxPool2D((2,2),  name = "pool_b2")
+    b3 = layers.Dropout(0.10,     name = "drop_2")
+
+    l1 = layers.Flatten(name = "flat")
+    l2 = layers.Dropout(0.10, name = "drop_3")
+
+    l3 = layers.Dense(32, activation=activations.swish)
+    l4 = layers.Dense(16, activation=activations.swish)
+    lf = layers.Dense(lj, activation=last_act)
+
+    model = models.Sequential([l0, a1, a2, a3, a4, b1, b2, b3, l1, l2, l3, l4, lf])
+
+    ## compile
+    opt = optimizers.Adam(learning_rate=0.0000000001)
+    model.compile(optimizer = opt,
+              loss          = loss,
+              metrics       = ['accuracy']) ## metrics.RecallAtPrecision(precision=0.5);PrecisionAtRecall(recall=0.5)
+
+    return model
+
+def exp_2D_model(dexp, labs):
+    '''
+    model expression data
+    '''
+
+    ## shapes
+    di, dj, dk, dl = dexp.shape
+    li, lj         = labs.shape
+
+    ## inputs, layers, model
+    inp = tf.keras.Input(shape = (dj,dk,dl), name = "inp_exp")
+    x   = layers.Conv2D(16, (2,2), activation=activations.swish)(inp)
+    x   = layers.Conv2D(16, (2,2), activation=activations.swish)(x)
+    x   = layers.MaxPool2D((2,2))(x)
+    x   = layers.Dropout(0.10)(x)
+
+    x   = layers.Conv2D(32, (2,2), activation=activations.swish)(x)
+    x   = layers.MaxPool2D((2,2))(x)
+    x   = layers.Dropout(0.10)(x)
+
+    x   = layers.Flatten()(x)
+    x   = layers.Dense(32, activation=activations.swish)(x)
+    # x   = layers.Dense(lj, activation=activations.softmax)(x) ## this is just for testing individually
+    model  = tf.keras.Model(inputs=inp, outputs=x)
+
+    return model
+
+def dna_2D_model(dpro, labs):
+    '''
+    model the DNA embeddings
+    '''
+
+    ## shapes
+    pi, pj, pk, pl = dpro.shape
+    li, lj         = labs.shape
+    print(f"Data Shapes:{dexp.shape} | Label Shape:{labs.shape}")
+
+    ## inputs
+    inp = tf.keras.Input(shape = (pj,pk,pl), name = "inp_dna")
+    x   = layers.Conv2D(16, (2,2), activation=activations.swish)(inp)
+    x   = layers.Conv2D(16, (2,2), activation=activations.swish)(x)
+    x   = layers.MaxPool2D((2,2))(x)
+    x   = layers.Dropout(0.10)(x)
+
+    x   = layers.Flatten()(x)
+    x   = layers.Dense(32, activation=activations.swish)(x)
+    # x   = layers.Dense(lj, activation=activations.softmax)(x) ## this is just for testing individually
+    model  = tf.keras.Model(inputs=inp, outputs=x)
+
+    return model
+
+def multi_inp_2D_CNN(dexp, dpro, labs):
+    '''
+    Model that uses both expression and DNA embeddings (from promoters)
+    '''
+    
+    ## activations and loss
+    last_act, loss = loss_n_activations(labs)
+
+    ## inputs
+    model_exp = exp_2D_model(dexp, labs)
+    model_dna = dna_2D_model(dpro, labs)
+
+    ## collect priors
+    comb = layers.Concatenate()([model_exp.output, model_dna.output])
+
+    ## model
+    z   = layers.Dense(16, activation="relu")(comb)
+    z   = layers.Dense(2, activation=last_act)(z)
+    model = tf.keras.Model(inputs=[model_exp.input, model_dna.input], outputs=z)
+
+    ## compile
+    opt = optimizers.Adam(learning_rate=0.0000000001)
+    model.compile(optimizer = opt,
+              loss          = loss,
+              metrics       = ['accuracy'])
+
+
+    return model
+
+def model_fit(d_lst, l_trn, class_wgts_dct, model, epochs = 8, batch_size = 32,
+                    validation_split = 0.1, validation_steps = 5, features = "single"):
+    '''
+    Trains model; if features == single then
+    only the first input object is used for training
+    '''
+    if features     == "single":
+        d_trn = d_lst[0]
+    elif features   == "comb":
+        d_trn = d_lst
+    else:
+        print(f"Please provide `exp` or `comb` as features values")
+        sys.exit()
+
+
+    history = model.fit(x = d_trn,
+                        y = l_trn,
+                        epochs = epochs,
+                        batch_size = batch_size,
+                        validation_split = validation_split,
+                        validation_steps = validation_steps,
+                        class_weight     = class_wgts_dct) ## callbacks=[tensorboard_callback]
+
+    return history, model
+
+def fit_iterator(dexp, dpro, labs_norm,  model, features = "exp"):
     '''
     recieves lst of datasets from a split and 
     fits the model to each set and generates
@@ -425,38 +544,57 @@ def fit_iterator(dexp, dpro, labs_norm,  model):
         class_wgts_dct = gen_class_wgts(l_trn)
 
         ## train model
-        history = model_fit(d_exp_trn, l_trn, class_wgts_dct)
-        hist_lst.append(history)
+        if features     == "exp":
+            d_trn_lst       = [d_exp_trn, None]
+            d_tst_lst       = [d_exp_tst, None]
+            history,model   = model_fit(d_trn_lst,l_trn, class_wgts_dct, model, features = 'single')
+            classes, probs, report = evaluate(d_tst_lst, l_tst, model, features = 'single')
+            hist_lst.append(history)
+            perf_lst.append(report)
         
-        ## generate performance 
-        classes, probs, report = evaluate(d_exp_tst, l_tst)
-        perf_lst.append(report)
+        elif features   == "pro":
+            d_trn_lst       = [d_pro_trn, None]
+            d_tst_lst       = [d_pro_tst, None]
+            history, model  = model_fit(d_trn_lst, l_trn, class_wgts_dct, model, features = 'single')
+            classes, probs, report = evaluate(d_tst_lst, l_tst, model, features = 'single')
+            hist_lst.append(history)
+            perf_lst.append(report)
 
+        elif features   == "comb":
+            d_trn_lst       = [d_exp_trn, d_pro_trn]
+            d_tst_lst       = [d_exp_tst, d_pro_tst]
+            history, model  = model_fit(d_trn_lst, l_trn, class_wgts_dct, model, features = 'comb')
+            classes, probs, report = evaluate(d_tst_lst, l_tst, model, features = 'comb')
+            hist_lst.append(history)
+            perf_lst.append(report)
+        else:
+            print(f"Please provide `exp` or `comb` as feature")
+            sys.exit()
 
     return hist_lst, perf_lst
 
-def model_fit(d_trn, l_trn, class_wgts_dct, epochs = 8, batch_size = 32,
-                    validation_split = 0.1, validation_steps = 5,):
+def evaluate(d_lst, l_tst, model, features = "single"):
     '''
-    Trains model
-    '''
-    history = model.fit(x = d_exp_trn,
-                        y = l_trn,
-                        epochs = epochs,
-                        batch_size = batch_size,
-                        validation_split = validation_split,
-                        validation_steps = validation_steps,
-                        class_weight     = class_wgts_dct) ## callbacks=[tensorboard_callback]
-
-    return history
-
-def evaluate(d_exp_tst, l_tst):
-    '''
-    Evaluation of model on test data
+    Evaluation of model on test data; both expression and DNA data
+    features == single/combined
+    if feature == single then the first element of data_lst will be used
+    to make predictions
     '''
     ## Get Prediction Probs
     ## https://datascience.stackexchange.com/questions/27153/how-to-get-predicted-class-labels-in-convolution-neural-network/27756
-    tst_probs = model.predict(d_exp_tst, verbose=0)
+    
+    ## select data
+    if features      == "single":
+        d_tst = d_lst[0]
+    elif features    == "comb":
+        d_tst = d_lst
+    else:
+        print(f"Please provide `exp` or `comb` as feature")
+        sys.exit()
+
+    
+    ## Predict
+    tst_probs = model.predict(d_tst, verbose=0)
     # tst_clas = model.predict_classes(d_tst, verbose=0) ## gives warning to use np.argmax
 
     ## Get Classes
@@ -474,15 +612,32 @@ def evaluate(d_exp_tst, l_tst):
 
 # %% SUMMARY
 # model = simple_1D_cnn(d_exp_trn, l_trn)
-model = simple_2d_cnn(d_exp_trn, l_trn)
+# model = simple_2d_cnn(d_pro_trn, l_trn)
+model = multi_inp_2D_CNN(d_exp_trn, d_pro_trn, l_trn)
 model.summary()
 
 dot_img_file = '/tmp/model_1.png'
 tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True, dpi= 64)
 
-# %% FIT
-hist_lst, perf_lst = fit_iterator(dexp, dpro, labs_norm,  model)
+# %% FIT - Multiple
+hist_lst, perf_lst = fit_iterator(dexp, dpro, labs_norm,  model, features = "comb")
 
+# %% FIT - TEST ##############
+## Model
+# model           = exp_2D_model(d_exp_trn, l_trn); dlst = [d_exp_trn, None]
+model           = dna_2D_model(d_pro_trn, l_trn); dlst = [d_pro_trn, None]
+dot_img_file    = '/tmp/model_1.png'
+tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True, dpi= 64)
+
+## Compile
+opt     = optimizers.Adam(learning_rate=0.0000000001)
+model.compile(optimizer     = opt,
+            loss            = losses.categorical_crossentropy,
+            metrics         = ['accuracy']) ## metrics.RecallAtPrecision(precision=0.5);PrecisionAtRecall(recall=0.5)
+
+## Fit
+hist = model_fit([d_pro_trn, None], labs_norm, class_wgts_dct, model, features = "single")
+###############################
 
 # %% PERFORMANCE ############
 #############################
