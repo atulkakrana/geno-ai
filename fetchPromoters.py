@@ -14,6 +14,7 @@ import subprocess
 import numpy as np
 import pandas as pd
 from subprocess import PIPE
+from seq_embeddings import fasta_reader
 
 # %% TOOLS
 
@@ -187,9 +188,9 @@ def filter_flanked(bedfile, gene_table):
     outdct  = {}
 
     ## inputs
-    df   = pd.read_csv(bedfile, sep = "\t", header=None)
-    grp  = df.groupby(df.iloc[:,3])
-    keys = grp.groups.keys()
+    df      = pd.read_csv(bedfile, sep = "\t", header=None)
+    grp     = df.groupby(df.iloc[:,3])
+    keys    = grp.groups.keys()
 
     ## iterate over the entries
     ## and select one entry per gene

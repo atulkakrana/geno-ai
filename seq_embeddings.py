@@ -184,11 +184,15 @@ def overlap_k(seq, kwidth =3, stride = 1):
     # print(f"Seq length: {len(seq)} | Total Kmers:{len(kmer_lst)}")
     return kmer_lst
 
-def train_word_vec_model(feature_file):
+def train_word_vec_model(feature_file, model_type = "cbow"):
     '''
     here we train word vectors models
     https://fasttext.cc/docs/en/unsupervised-tutorial.html
     https://www.analyticsvidhya.com/blog/2017/07/word-representations-text-classification-using-fasttext-nlp-facebook/
+    
+    Available Models Types:
+    "skipgram"  = Skip-Gram
+    "cbow"      = continuous bag of words
     '''
 
     ## output
@@ -199,19 +203,31 @@ def train_word_vec_model(feature_file):
 
     ## sanity check and 
     ## train word vectors
-    minn_val    = 2    ## min subword size
+    minn_val    = 3    ## min subword size
     maxn_val    = 6    ## max subword size
     dimn_val    = 128  ## embedding dimensions
-    epochs      = 20   ## epochs; default:5
-    learn_rate  = 0.01 ## default: 0.5 [0.01,1]
+    epochs      = 5   ## epochs; default:5
+    learn_rate  = 0.05 ## default: 0.5 [0.01,1]
     path        =  pathlib.Path(feature_file)
 
     print(f"Training fastText words vectors on seq file:{feature_file}")
     print(f"featurefile:{feature_file}\nminn:{minn_val}\nmaxn:{maxn_val}\ndim:{dimn_val}\nepoch:{epochs}\nlearning_rate:{learn_rate}\n")
     if path.is_file():
-        model = fasttext.train_unsupervised(feature_file, minn=minn_val, maxn=maxn_val, dim=dimn_val, epoch = epochs, lr = learn_rate)
+        if model_type == "skipgram":
+            print(f"Training `SKIPGRAM` model")
+            model = fasttext.train_unsupervised(feature_file, "skipgram", minn=minn_val, maxn=maxn_val, dim=dimn_val, epoch = epochs, lr = learn_rate)
+        elif model_type=="cbow":
+            print(f"Training `CBOW` model")
+            model = fasttext.train_unsupervised(feature_file, "cbow", minn=minn_val, maxn=maxn_val, dim=dimn_val, epoch = epochs, lr = learn_rate)
+        else:
+            model = None
+            print(f"Check `model_type` parameter:{model_type} - exiting")
+            sys.exit()
+        
+        ## write the models and config
         model.save_model(model_file)
-        fhout.write(f"featurefile:{feature_file}\nminn:{minn_val}\nmaxn:{maxn_val}\ndim:{dimn_val}\nepoch:{epochs}\nlearning_rate:{learn_rate}\n")
+        fhout.write(f"featurefile:{feature_file}\ntype:{model_type}\nminn:{minn_val}\nmaxn:{maxn_val}\ndim:{dimn_val}\nepoch:{epochs}\nlearning_rate:{learn_rate}\n")
+    
     else:
         raise FileNotFoundError(f"{feature_file} not found")
     
@@ -221,19 +237,19 @@ def train_word_vec_model(feature_file):
 
 # %% MAIN
 ## Preapre Feats Seqeunce
-_, comb_fasta        = combine_fasta(DATA_DIR, DATA_FLS)
-train_fasta          = process_seqs(comb_fasta, out_format="feats")
+# _, comb_fasta   = combine_fasta(DATA_DIR, DATA_FLS)
+# _, train_fasta  = process_seqs(comb_fasta, out_format="feats")
 
 ## Train Model
-# train_fasta           = "/home/atul/0.work/genomes/all_features_seq.fa"
+# train_fasta           = "/home/atul/0.work/genomes/all_features_seq-segmented.test.feats"
 # train_fasta           = "/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext.fa"
-# wordvec_model         = train_word_vec_model(train_fasta)
+# wordvec_model   = train_word_vec_model(train_fasta)
 
 # %% DEV
 # model = fasttext.load_model("/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext_01_23_13_11.bin")
 
 # %%DEV
-process_seqs(fas_in = "test.fa", method = "ok")
+# process_seqs(fas_in = "test.fa", method = "ok")
 
 # %% TEST
 # vect = model.get_word_vector('ATGCGC')
@@ -242,10 +258,11 @@ process_seqs(fas_in = "test.fa", method = "ok")
 
 # %% MAIN
 def main():
-    out_fasta       = process_genome_data(DATA_DIR, DATA_FLS)
-    test_file       = "/home/atul/0.work/genomes/all_features_seq.fa"
-    test_file       = "/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext.fa"
-    wordvec_model   = train_word_vec_model(test_file)
+    _, comb_fasta   = combine_fasta(DATA_DIR, DATA_FLS)
+    _, train_fasta  = process_seqs(comb_fasta, out_format="feats")
+    # test_file       = "/home/atul/0.work/genomes/all_features_seq.fa"
+    # test_file       = "/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext.fa"
+    wordvec_model   = train_word_vec_model(train_fasta)
 
     return None
 
