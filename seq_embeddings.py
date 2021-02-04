@@ -22,8 +22,8 @@ import fasttext
 
 # %% SETTINGS
 DATA_DIR = f"{HOME}/0.work/genomes"
-DATA_FLS = ['hgTables_5UTR.fa', 'hgTables_3UTR.fa', 'hgTables_500up.fa', 'hgTables_300down.fa', 'hgTables_cds.fa']
-
+DATA_FLS = ['hgTables_5UTR.fa', 'hgTables_3UTR.fa', 'hgTables_500up.fa', 'hgTables_300down.fa', 'hgTables_cds.fa'] ## Train Model Genomic Features
+# DATA_FLS = ['Mus_musculus.GRCm38.68.dna.toplevel.mod.clean.fa'] ## Train Model On Whole Genome
 
 # %% FUNCTIONS
 def fasta_reader(fas):
@@ -46,7 +46,7 @@ def fasta_reader(fas):
         alen    = len(seq)
         fasdct[aname] = seq
 
-    print(f"\nRead file:{fas} | Seqeunces:{len(fasdct)}")
+    print(f"Read FASTA file:{fas} | Sequences:{len(fasdct)}")
     return fasdct
 
 def fasta_writer(fas_dct, fas_out):
@@ -65,16 +65,16 @@ def fasta_writer(fas_dct, fas_out):
         acount+=1
     fhout.close()
 
-    print(f"FASTA file with {acount} entried written:{fas_out}")
+    print(f"Written FASTA file with {acount} | Sequences:{fas_out}")
     return fas_out
 
-def feats_writer(faslst, outfile):
+def feats_writer(faslst, feats_out):
     '''
     writes two element list (name, seq) to fasta
     '''
     ## output
     # outfile = "%s/all_features_seq.fa" % (datadir)
-    fhout = open(outfile, 'w')
+    fhout = open(feats_out, 'w')
 
     ## write to file
     acount = 0
@@ -82,8 +82,8 @@ def feats_writer(faslst, outfile):
         fhout.write("%s\n\n" % (aseq))
         acount +=1
     fhout.close()
-    print(f"\nWrote {acount} seqs to file:{outfile}")
-    return None
+    print(f"\nWrote {acount} seqs to file:{feats_out}")
+    return feats_out
 
 def combine_fasta(datadir, datafls):
     '''
@@ -94,7 +94,12 @@ def combine_fasta(datadir, datafls):
 
     ## output
     reslst      = []
-    feats_out   = os.path.join(datadir, "all_features_seq.fa")
+
+    if len(datafls) > 1:
+        feats_out   = os.path.join(datadir, "genomic_features-train.fa")
+    else:
+        afile = datafls[0]
+        feats_out   = os.path.join(datadir, "%s-train.fa" % afile.rpartition(".")[0] )
 
     acount = 0
     for fas in datafls:
@@ -128,12 +133,12 @@ def process_seqs(fas_in, method = "ok", out_format = "fasta"):
     "fasta" = fasta file (for pre-processing fasta before embeddings)
     "feats" = text file with just line separated seqeunces (for training mebddings model)
     '''
-    print(f"\nFn: Seqeunce Segementator")
+    print(f"\n#### Fn: Seqeunce Segementator ########")
 
     ## outputs
     fas_dct     = {}
-    fas_out     = "%s-segmented.fas" % (fas_in.rpartition(".")[0])
-    feat_out    = "%s-segmented.feats"     % (fas_in.rpartition(".")[0])
+    fas_out     = "%s-segmented.fas"    % (fas_in.rpartition(".")[0])
+    feat_out    = "%s-segmented.feats"  % (fas_in.rpartition(".")[0])
 
     ## inputs
     fas_dct = fasta_reader(fas_in)
@@ -150,16 +155,18 @@ def process_seqs(fas_in, method = "ok", out_format = "fasta"):
 
     ## write fasta file
     if out_format   == "fasta":
-        _ = fasta_writer(fas_dct, fas_out)
+        outfile     = fasta_writer(fas_dct, fas_out)
+        print(f"Sequence segementaion complete")
     elif out_format == "feats":
-        feat_lst = fas_dct.values()
-        _ = feats_writer(feat_lst, feat_out)
+        feat_lst    = fas_dct.values()
+        outfile     = feats_writer(feat_lst, feat_out)
+        print(f"Sequence segementaion complete")
     else:
         print(f"The `out_format` value:{out_format} not recofnized - exiting")
         sys.exit()
 
-    print(f"Sequence segementaion complete: {fas_out}")
-    return fas_dct, fas_out
+    print(f"See outfile:{outfile}")
+    return fas_dct, outfile
 
 def overlap_k(seq, kwidth =3, stride = 1):
     '''
@@ -259,10 +266,10 @@ def train_word_vec_model(feature_file, model_type = "cbow"):
 # %% MAIN
 def main():
     _, comb_fasta   = combine_fasta(DATA_DIR, DATA_FLS)
-    _, train_fasta  = process_seqs(comb_fasta, out_format="feats")
-    # test_file       = "/home/atul/0.work/genomes/all_features_seq.fa"
-    # test_file       = "/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext.fa"
-    wordvec_model   = train_word_vec_model(train_fasta)
+    _, train_file   = process_seqs(comb_fasta, out_format="feats")
+    # train_file       = "/home/atul/0.work/genomes/all_features_seq.fa"
+    # train_file       = "/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.mod.clean-train-segmented.feats"
+    wordvec_model   = train_word_vec_model(train_file)
 
     return None
 

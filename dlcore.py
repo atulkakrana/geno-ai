@@ -18,7 +18,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # %% SETTINGS
-MODEL = f"{HOME}/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext_01_23_13_11.bin"
+# MODEL = f"{HOME}/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext_01_23_13_11.bin"
+# MODEL = f"{HOME}/0.work/genomes/genomic_features-train-segmented_02_03_20_04.bin"
+MODEL = f"{HOME}/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.mod.clean-train-segmented_02_03_19_24.bin"
 
 # %% HELPERS
 def hugo_to_ense(species, aset):
@@ -321,6 +323,8 @@ def prepare_data_n_labels(dpkl, lpkl, spkl, mode='binary'):
 
 # %% MAIN
 def main():
+
+    ## 
     # species      = "mouse"
     # labs_dct_pkl = "labs_bin_dct.p"
     # labs_dct, unmap_lst = update_labs_to_ensembl(labs_dct_pkl, species)

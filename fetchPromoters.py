@@ -29,6 +29,8 @@ def clean_bed(bed, remove_scaffolds = False):
     cleans bed file for better comaptibility with genomes
     remove_scaffold: will remove seqeunces from scaffolds and contigs
     '''
+    print("\n#### Fn: Clean BED File #######")
+
     ## lists
     exceptions = ['X', 'Y', 'MT', 'M']
 
@@ -82,10 +84,10 @@ def gene_level_bed(bed, feat = 'prom'):
     different reported 5' UTR coordinates for same genes; here
     we ensure that there is just one entry per gene level
     '''
-    print("\nFn: Uniq BED entries ########")
+    print("\n#### Fn: Collapse To Gene Level #######")
 
     ## output
-    outfile = "%s.mod.bed" % (bed.rpartition(".")[0])
+    outfile = "%s.gene-level.bed" % (bed.rpartition(".")[0])
     fhout = open(outfile, 'w')
 
     ## inputs
@@ -133,8 +135,9 @@ def gene_level_bed(bed, feat = 'prom'):
     for ent in uniq_lst:
         fhout.write("%s\n" % ("\t".join(str(i) for i in ent)))
 
-    print(f"\nEntries in input BED file:{len(df.index)}")
+    print(f"ntries in input BED file:{len(df.index)}")
     print(f"Entries collapsed to gene level:{len(uniq_lst)}")
+    print(f"Updated file is :{outfile}")
     return outfile
 
 
@@ -147,7 +150,7 @@ def add_flanks(gene_table, chr_lengths, flank = 500):
     output: each line is duplicated to include flanking regions 
     from the other strand; we will filter these later
     '''
-    print(f"\nFn: Flank Coordinates")
+    print(f"\n#### Fn: Flank Coordinates #####")
 
     ## outputs
     outfile = "%s_flanked.bed" % (gene_table.rpartition(".")[0])
@@ -173,17 +176,20 @@ def add_flanks(gene_table, chr_lengths, flank = 500):
         print("Something went wrong with bedtools flanks generator")
         print(f"STD ERROR:{res.stderr}")
         sys.exit()
-
+    
+    print(f"Output file is :{outfile}")
     return outfile
 
-def filter_flanked(bedfile, gene_table):
+def filter_flanked(bedfile):
     '''
     bedtools when flanking duplicates gene entry so include 
     coords for flanks for both left and right; here we retain 
     right coords for + strand and left coords for negative strand
     '''
+    print(f"\n#### Fn: Select Flank Coords ########")
+    
     ## outfile
-    outfile = "%s_flanked_uniq.bed" % (gene_table.rpartition(".")[0])
+    outfile = "%s_uniq.bed" % (bedfile.rpartition(".")[0])
     fhout   = open(outfile,'w')
     outdct  = {}
 
@@ -223,31 +229,32 @@ def filter_flanked(bedfile, gene_table):
             fhout.write("%s\n" % ("\t".join(str(i) for i in ent)))
     
     fhout.close()
-    print(f"\nInput:{len(df.index)} | output:{len(outdct)}")
+    print(f"Input:{len(df.index)} | output:{len(outdct)}")
     print(f"See outfile:{outfile}")
-    return df, outdct
+    return outdct, outfile
 
-def extract_seqs(gene_table, assembly):
+def extract_seqs(bedfile, assembly):
     '''
     use bedtools and coordinates from bed file to extract the sequences;
 
     flip the seqeunces on negative strand??
     '''
+    print(f"\n#### Fn: Extract Coords Sequence ########")
 
     ## outfile
-    outfile = "%s_flanked_uniq.fasta" % (gene_table.rpartition(".")[0])
+    outfile = "%s.fas" % (bedfile.rpartition(".")[0])
     fhout   = open(outfile,'w')
 
     ## inputs
-    inpfile = "%s_flanked_uniq.bed" % (gene_table.rpartition(".")[0])
-    print(f"Coords file:{inpfile}")
+    # inpfile = "%s_flanked_uniq.bed" % (gene_table.rpartition(".")[0])
+    print(f"Coords file:{bedfile}")
 
     ## Use bedtools to 
     ## extract seqeunces
     ## '-s' switch to use strand
     ## informarion and reverse
     ## complement for negative strand
-    opts    = ['bedtools','getfasta', '-fi', assembly, '-bed', inpfile, '-fo', outfile, '-s', '-name']
+    opts    = ['bedtools','getfasta', '-fi', assembly, '-bed', bedfile, '-fo', outfile, '-s', '-name']
     print("%s" % (" ".join(str(i) for i in opts)))
     res = subprocess.run(opts, stdout=PIPE, stderr=PIPE, universal_newlines=True)
 
@@ -262,6 +269,7 @@ def extract_seqs(gene_table, assembly):
         print(f"STD ERROR:{res.stderr}")
         sys.exit()
     
+    print(f"See outfile:{outfile}")
     return outfile
 
 # %% MAIN - Interactive

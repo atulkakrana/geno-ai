@@ -410,14 +410,15 @@ def simple_2d_cnn(data,labs):
 
     return model
 
-def exp_2D_model(dexp, labs):
+def exp_2D_model(data, labs, predict = False):
     '''
     model expression data
     '''
 
     ## shapes
-    di, dj, dk, dl = dexp.shape
+    di, dj, dk, dl = data.shape
     li, lj         = labs.shape
+    print(f"Data Shapes:{data.shape} | Label Shape:{labs.shape}")
 
     ## inputs, layers, model
     inp = tf.keras.Input(shape = (dj,dk,dl), name = "inp_exp")
@@ -432,20 +433,25 @@ def exp_2D_model(dexp, labs):
 
     x   = layers.Flatten()(x)
     x   = layers.Dense(32, activation=activations.swish)(x)
-    # x   = layers.Dense(lj, activation=activations.softmax)(x) ## this is just for testing individually
+
+    if predict:
+        x   = layers.Dense(lj, activation=activations.softmax)(x) ## this is just for testing individually
+    else:
+        pass
+
     model  = tf.keras.Model(inputs=inp, outputs=x)
 
     return model
 
-def dna_2D_model(dpro, labs):
+def dna_2D_model(data, labs, predict = False):
     '''
     model the DNA embeddings
     '''
 
     ## shapes
-    pi, pj, pk, pl = dpro.shape
+    pi, pj, pk, pl = data.shape
     li, lj         = labs.shape
-    print(f"Data Shapes:{dexp.shape} | Label Shape:{labs.shape}")
+    print(f"Data Shapes:{data.shape} | Label Shape:{labs.shape}")
 
     ## inputs
     inp = tf.keras.Input(shape = (pj,pk,pl), name = "inp_dna")
@@ -456,7 +462,11 @@ def dna_2D_model(dpro, labs):
 
     x   = layers.Flatten()(x)
     x   = layers.Dense(32, activation=activations.swish)(x)
-    # x   = layers.Dense(lj, activation=activations.softmax)(x) ## this is just for testing individually
+
+    if predict:
+        x   = layers.Dense(lj, activation=activations.softmax)(x) ## this is just for testing individually
+    else:
+        pass
     model  = tf.keras.Model(inputs=inp, outputs=x)
 
     return model
@@ -620,12 +630,14 @@ dot_img_file = '/tmp/model_1.png'
 tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True, dpi= 64)
 
 # %% FIT - Multiple
-hist_lst, perf_lst = fit_iterator(dexp, dpro, labs_norm,  model, features = "comb")
+hist_lst, perf_lst = fit_iterator(d_exp_trn, d_pro_trn, l_trn,  model, features = "comb")
+
 
 # %% FIT - TEST ##############
 ## Model
 # model           = exp_2D_model(d_exp_trn, l_trn); dlst = [d_exp_trn, None]
-model           = dna_2D_model(d_pro_trn, l_trn); dlst = [d_pro_trn, None]
+model           = dna_2D_model(d_pro_trn, l_trn, predict = True)
+dlst            = [d_pro_trn, None]
 dot_img_file    = '/tmp/model_1.png'
 tf.keras.utils.plot_model(model, to_file=dot_img_file, show_shapes=True, dpi= 64)
 
@@ -636,7 +648,7 @@ model.compile(optimizer     = opt,
             metrics         = ['accuracy']) ## metrics.RecallAtPrecision(precision=0.5);PrecisionAtRecall(recall=0.5)
 
 ## Fit
-hist = model_fit([d_pro_trn, None], labs_norm, class_wgts_dct, model, features = "single")
+hist = model_fit(dlst, l_trn, class_wgts_dct, model, features = "single")
 ###############################
 
 # %% PERFORMANCE ############
@@ -651,7 +663,8 @@ print(f"Train acc:{trn_acc} | Test acc:{tst_acc}")
 
 
 # %% PERFORMANCE
-tst_class, tst_probs = evaluate(d_exp_tst, l_tst)
+t_lst = [d_pro_tst, None]
+tst_class, tst_probs, classifer_report = evaluate(t_lst, l_tst, model)
 pr_plot(tst_class, tst_probs)
 
 

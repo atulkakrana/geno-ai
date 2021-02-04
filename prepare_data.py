@@ -14,7 +14,7 @@ import pickle
 import seaborn as sns
 import matplotlib.pyplot as plt
 from rpy2.robjects import pandas2ri
-from seq_embeddings import fasta_reader
+from seq_embeddings import fasta_reader, process_seqs
 from rpy2.robjects.packages import importr
 from rpy2.robjects.conversion import localconverter
 from fetchPromoters import add_flanks, filter_flanked, extract_seqs, clean_bed, gene_level_bed
@@ -186,12 +186,15 @@ def fetch_promoters(genes_bed, chr_sizes, genome_fl, flank = 500):
     a large number of genes in our expression data (from Ensembl 71, 2013)
     '''
     
-    flanked_bed      = add_flanks(genes_bed, chr_sizes, flank)       ## extend coordinates to include flanks
-    df, flanked_dct  = filter_flanked(flanked_bed, genes_bed)        ## select correct flanked coords based on + and - strand
-    outfasta         = extract_seqs(genes_bed, genome_fl)            ## extracts flanked coords seq in correct orientation
-
-    print(f"Flanked seqeunces are written to:{outfasta}")
-    return outfasta
+    flanked_bed     = add_flanks(genes_bed, chr_sizes, flank)       ## extend coordinates to include flanks
+    _, filtered_bed = filter_flanked(flanked_bed)                   ## select correct flanked coords based on + and - strand
+    outfasta        = extract_seqs(filtered_bed, genome_fl)         ## extracts flanked coords seq in correct orientation
+    _,outfeats      = process_seqs(outfasta, method = "ok", out_format = "fasta") ## Segment the seqeunces to generate embeddings 
+    
+    print(f"\nPromoters Fetched")
+    print(f"Flanked seqeunces written to:{outfasta}")
+    print(f"Segmented seqeunces written to:{outfeats}")
+    return outfeats
 
 def read_seq_features(fas_fl_lst, feat_lst):
     '''
@@ -202,7 +205,7 @@ def read_seq_features(fas_fl_lst, feat_lst):
 
     OUTPUT: dict of dicts i.e. (dict of promoter seqeunces, dict of gene seqeunces, etc.)
     '''
-    print(f"\nFn: Read and process FASTA feature files")
+    print(f"\n#### Fn: Read and Process FASTA feature Files ########")
 
     ## output
     fasdct = {}
@@ -223,6 +226,7 @@ def read_seq_features(fas_fl_lst, feat_lst):
         ## expression data
         tmp_dct = {}
         fasta   = fasta_reader(fl)
+
         for head,seq in fasta.items():
             k = head.split(".",1)[0].replace("ENSMUST","ENSMUSG") ## incase seq extraction used UCSC table browswer which returns transcript ids
             k = k.split(":",1)[0] ## extract name from bedtools generated fasta header (ENSMUSG00000118555::chr7:111119594-111120094(-))
@@ -242,12 +246,12 @@ def read_seq_features(fas_fl_lst, feat_lst):
 # data_trfd       = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method = 'log')
 
 ## sequence data
-bed         = clean_bed(GENE_BED_FL, remove_scaffolds=True)
-bed_uniq    = gene_level_bed(bed, feat = 'promoter')
-prom_fasta  = fetch_promoters(bed_uniq, CHR_SIZE_FL, GENOME_ASSM, flank = 500)
-fasta_lst   = [prom_fasta, ]
-feats_lst   = ['promoter', ]
-fasdct      = read_seq_features(fasta_lst, feats_lst)
+# bed         = clean_bed(GENE_BED_FL, remove_scaffolds=True)
+# bed_uniq    = gene_level_bed(bed, feat = 'promoter')
+# prom_fasta  = fetch_promoters(bed_uniq, CHR_SIZE_FL, GENOME_ASSM, flank = 500)
+# fasta_lst   = [prom_fasta, ]
+# feats_lst   = ['promoter', ]
+# fasdct      = read_seq_features(fasta_lst, feats_lst)
 
 # %% DEV
 
@@ -278,9 +282,9 @@ fasdct      = read_seq_features(fasta_lst, feats_lst)
 # %% MAIN 
 def main():
     ## expression data
-    non_exprs_idxs = [0,1] ## indexes for columns other than exprssion data i.e. gene info, etc.
-    data_df        = data_reader(DATA_FL)
-    data_trfd      = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method = 'log')
+    # non_exprs_idxs = [0,1] ## indexes for columns other than exprssion data i.e. gene info, etc.
+    # data_df        = data_reader(DATA_FL)
+    # data_trfd      = process_exprs_data(data_df, non_exprs_idxs, id_col = 0, method = 'log')
 
     ## seq data 
     ## read, clean and extract bed
@@ -314,6 +318,10 @@ if __name__ == "__main__":
 ## v03 [01/24/2021]
 ## added functions to fetch promoter seqeunces guven bedfiles
 ## and write the dictionary for seqeunce based features (most of the functions moved to fetchpromoters.py)
+
+## v04 [02/02/2021]
+## added function to segment DNA seqeunces before writting to dict; segemenattion is required 
+##      to generate the embeddings
 
 
 
