@@ -170,20 +170,19 @@ def encode_labels(data_dct):
 
     return labels_enc
 
-def gen_seq_embeddings(fasdct):
+def gen_seq_embeddings(fasdct, model_fl):
     '''
     single-level fasta dct for a feature set (i.e. gene, promoter, etc)
     key is the genename and value is seqeunce
 
-    return a dict where seqeunce 
-    key is genename and value is embedding
+    Output: dict {genename: embedding}
     '''
     print(f"\nFn: Generate Seq Embeddings")
     ## output
     embed_dct = {}
 
     ## inputs
-    model = fasttext.load_model(MODEL)
+    model = fasttext.load_model(model_fl)
 
     ## iterate and embedd
     for gene, seq in list(fasdct.items()):
@@ -305,7 +304,7 @@ def prepare_data_n_labels(dpkl, lpkl, spkl, mode='binary'):
 # ## generate dna embeddings
 # DNA_PKL      = "dna_feats.pkl"
 # dna_seqs_dct = pickle.load( open(DNA_PKL, "rb" ) )
-# dna_feats_dct= {k:gen_seq_embeddings(dct) for k, dct in dna_seqs_dct.items()}
+# dna_feats_dct= {k:gen_seq_embeddings(dct,  MODEL) for k, dct in dna_seqs_dct.items()}
 # DNA_FEATS_PKL= "dna_feats_embed.pkl"
 # pickle.dump( dna_feats_dct, open(DNA_FEATS_PKL, "wb" ) )
 
@@ -337,7 +336,7 @@ def main():
     ## generate dna embeddings
     DNA_PKL      = "dna_feats.pkl"
     dna_seqs_dct = pickle.load( open(DNA_PKL, "rb" ) )
-    dna_feats_dct= {k:gen_seq_embeddings(dct) for k, dct in dna_seqs_dct.items()}
+    dna_feats_dct= {k:gen_seq_embeddings(dct, MODEL) for k, dct in dna_seqs_dct.items()}
     DNA_FEATS_PKL= "dna_feats_embed.pkl"
     pickle.dump( dna_feats_dct, open(DNA_FEATS_PKL, "wb" ) )
 

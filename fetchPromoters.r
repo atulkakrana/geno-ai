@@ -48,7 +48,7 @@ annots
 annots  = getBM(attributes  = attrbs, 
                 mart        = ensembl)
 head(annots)
-# write.table(annots, "biomart_anno_5_utr.tsv", row.names = FALSE, sep = "\t", quote = FALSE)
+write.table(annots, "biomart-ensembl-mm-anno.tsv", row.names = FALSE, sep = "\t", quote = FALSE)
 
 
 ## Convert to BED format
@@ -62,7 +62,7 @@ annots$chromosome_name = paste("chr",annots$chromosome_name, sep="")
 annots_bed      = annots[,c('chromosome_name','start_position',
                             'end_position','ensembl_gene_id', 'score', 'strand')]
 head(annots_bed, 50)
-write.table(annots_bed, "biomart-ensembl-anno.bed", row.names = FALSE, 
+write.table(annots_bed, "biomart-ensembl-mm-anno.bed", row.names = FALSE, 
                 sep = "\t", quote = FALSE, col.names = FALSE)
 
 

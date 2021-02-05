@@ -18,6 +18,8 @@ import sys
 import pathlib
 import datetime
 import fasttext
+import pickle as pkl
+from dlcore import gen_seq_embeddings
 
 
 # %% SETTINGS
@@ -168,7 +170,7 @@ def process_seqs(fas_in, method = "ok", out_format = "fasta"):
     print(f"See outfile:{outfile}")
     return fas_dct, outfile
 
-def overlap_k(seq, kwidth =3, stride = 1):
+def overlap_k(seq, kwidth =3, stride =1):
     '''
     sliding window for overlapping k-mers of given size after given strides
     '''
@@ -190,6 +192,27 @@ def overlap_k(seq, kwidth =3, stride = 1):
     # print(f"Kmers snippet:{kmer_lst[:50]}")
     # print(f"Seq length: {len(seq)} | Total Kmers:{len(kmer_lst)}")
     return kmer_lst
+
+def fasta_to_embed(infas, model_fl):
+    '''
+    this is the function to convert fasta file 
+    to a dict of embeddings
+    '''
+
+    ## output
+    outembed    = "%s-embed.p" % (infas.rpartition(".")[0])
+    embed_dct   = {}
+
+    ## segment fasta
+    _, feats_fl = process_seqs(infas, method = "ok", out_format = "fasta")
+    feats_dct   = fasta_reader(feats_fl)
+
+    ## embed
+    embed_dct   = gen_seq_embeddings(feats_dct, model_fl)
+
+    print(f"Genes in input FASTA:{len(feats_dct)} | Genes in output embeddings:{len(embed_dct)}")
+    pkl.dump(embed_dct, open(outembed, "wb"))
+    return embed_dct
 
 def train_word_vec_model(feature_file, model_type = "cbow"):
     '''
