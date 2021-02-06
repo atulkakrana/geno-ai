@@ -17,6 +17,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
+from seq_embeddings import fasta_reader, process_seqs
+
 # %% SETTINGS
 # MODEL = f"{HOME}/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.forfasttext_01_23_13_11.bin"
 # MODEL = f"{HOME}/0.work/genomes/genomic_features-train-segmented_02_03_20_04.bin"
@@ -170,6 +172,28 @@ def encode_labels(data_dct):
 
     return labels_enc
 
+def fasta_to_embed(infas, model_fl):
+    '''
+    this is the function to convert fasta file 
+    to a dict of embeddings
+    '''
+
+    ## output
+    outembed    = "%s-embed.p" % (infas.rpartition(".")[0])
+    embed_dct   = {}
+
+    ## segment fasta
+    _, feats_fl = process_seqs(infas, method = "ok", out_format = "fasta")
+    feats_dct   = fasta_reader(feats_fl)
+
+    ## embed
+    embed_dct   = gen_seq_embeddings(feats_dct, model_fl)
+
+    print(f"Genes in input FASTA:{len(feats_dct)} | Genes in output embeddings:{len(embed_dct)}")
+    pickle.dump(embed_dct, open(outembed, "wb"))
+    print(f"See file for output:{outembed}")
+    return embed_dct
+
 def gen_seq_embeddings(fasdct, model_fl):
     '''
     single-level fasta dct for a feature set (i.e. gene, promoter, etc)
@@ -312,6 +336,12 @@ def prepare_data_n_labels(dpkl, lpkl, spkl, mode='binary'):
 # LAB_PKL      = "data_imp_trfd_dct_labels.p" ## could be binary labels, multi-label or multi-class
 # DATA_PKL     = "data_imp_dct.p"
 # labs_pkl     = prepare_data_n_labels(DATA_PKL, LAB_PKL, DNA_FEATS_PKL, mode='binary')
+
+# %% MAIN
+## Generate FASTA embeddings
+infas   = 'clust_gene.fas'
+MODEL   = '/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.mod.clean-train-segmented_02_03_19_24.bin'
+adct    = fasta_to_embed(infas, MODEL)
 
 # %% DEV
 
