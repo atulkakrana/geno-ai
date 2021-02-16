@@ -27,17 +27,28 @@ DATA_FLS = ['hgTables_5UTR.fa', 'hgTables_3UTR.fa', 'hgTables_500up.fa', 'hgTabl
 # DATA_FLS = ['Mus_musculus.GRCm38.68.dna.toplevel.mod.clean.fa'] ## Train Model On Whole Genome
 
 # %% FUNCTIONS
-def fasta_reader(fas):
+def fasta_reader(fas, fas_filter = "longest"):
     '''
     read fasta file to list
+    fas_filter:
+        "longest": choose longest FASTA per key
+        "first": use first FASTA seqeunce if multiple seqeunces
     '''
+    ## imports
+    from collections import defaultdict
 
+    ## output 
+    fasdct      = {}
+
+    ## input
     fhin        = open(fas, 'r')
     aread       = fhin.read()
     faslst      = aread.split('>')
     fhin.close()
 
-    fasdct      = {}    ## Store FASTA as dict
+    ## parse header and 
+    ## seqs from FASTA
+    tmpdct      = defaultdict(list)    ## Store FASTA as dict
     acount      = 0     ## count the number of entries
     empty_count = 0
     for i in faslst[1:]:
@@ -45,10 +56,46 @@ def fasta_reader(fas):
         aname   = ent[0].split()[0].strip()       
         seq     = ''.join(x.strip() for x in ent[1:]) ## Sequence in multiple lines
         alen    = len(seq)
-        fasdct[aname] = seq
+        tmpdct[aname].append((seq, alen))
+        acount += 1
+        # fasdct[aname] = seq
+    print(f"Input Seqs:{acount}")
+
+    ## select one seqeunece if multiple
+    ## genes, transcripts for same ID
+    if fas_filter == "longest":
+        fasdct = select_longest(tmpdct)
+    elif fas_filter == "first":
+        fasdct = {k:v[0] for k,v in tmpdct}
+    else:
+        print(f"Unknown 'fas_filter' argument:{fas_filter} - exiting")
+        sys.exit()
 
     print(f"Read FASTA file:{fas} | Sequences:{len(fasdct)}")
     return fasdct
+
+def select_longest(indct):
+    '''
+    given a defaultdict(list), iterate and 
+    for each key select the longest seq
+    '''
+    resdct = {}
+    for k,v in indct.items():
+        # print(f"Key:{k}")
+        # print(f"Value:{v}")
+        if len(v) > 1:
+            # print(f"Multiple Seqs - selecting longest")
+            len_sorted = sorted(v, key = lambda x:x[1])
+            seq = len_sorted[0][0]  ## to select seq from a tuple (seq, len)
+        else:
+            seq = v[0][0]           ## to select seq from the single avaialable element
+        
+        ## add to dict        
+        resdct[k] = seq
+        # sys.exit()
+    
+    print(f"Output Seqs:{len(resdct)}")
+    return resdct
 
 def fasta_writer(fas_dct, fas_out):
     '''

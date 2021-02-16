@@ -192,7 +192,7 @@ def fasta_to_embed(infas, model_fl):
     print(f"Genes in input FASTA:{len(feats_dct)} | Genes in output embeddings:{len(embed_dct)}")
     pickle.dump(embed_dct, open(outembed, "wb"))
     print(f"See file for output:{outembed}")
-    return embed_dct
+    return embed_dct, outembed
 
 def gen_seq_embeddings(fasdct, model_fl):
     '''
@@ -339,9 +339,9 @@ def prepare_data_n_labels(dpkl, lpkl, spkl, mode='binary'):
 
 # %% MAIN
 ## Generate FASTA embeddings
-infas   = 'clust_gene.fas'
-MODEL   = '/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.mod.clean-train-segmented_02_03_19_24.bin'
-adct    = fasta_to_embed(infas, MODEL)
+# infas   = 'clust_gene.fas'
+# MODEL   = '/home/atul/0.work/genomes/Mus_musculus.GRCm38.68.dna.toplevel.mod.clean-train-segmented_02_03_19_24.bin'
+# adct    = fasta_to_embed(infas, MODEL)
 
 # %% DEV
 
