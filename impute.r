@@ -3,8 +3,8 @@
 
 ## ENVIRONMENT
 Sys.setenv(
-  "AWS_ACCESS_KEY_ID"     = "AKIAY4KB5K45YWZTFZOJ",
-  "AWS_SECRET_ACCESS_KEY" = "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",
+  "AWS_ACCESS_KEY_ID"     = "AKIA******",
+  "AWS_SECRET_ACCESS_KEY" = "SU****",
   "AWS_DEFAULT_REGION"    = "us-east-2"
 )
 
